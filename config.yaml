@@ -1,5 +1,5 @@
 theme: "hugo-PaperMod"
-baseURL: https://youthful-curran-e99745.netlify.app/
+baseURL: https://sithjaisong.netlify.app/
 languageCode: en-us
 title: Into R and SJ
 
@@ -77,12 +77,12 @@ params:
               url: tags
 
     homeInfoParams:
-        Title: "Into R and SJ"
+        Title: "Into R and SJ " 
         Content: >
-            Welcome to demo of hugo's theme PaperMod.
+            🙏 Welcome to demo of hugo's theme PaperMod. 😄
             - **PaperMod** is a simple but fast and responsive theme with useful feature-set that enhances UX.
-            - Do give a 🌟 on Github !
-            - PaperMod is based on theme [Paper](https://github.com/nanxiaobei/hugo-paper).
+            - Do give a 🌟 on Github ! 
+            - PaperMod is based on theme [Paper](https://github.com/nanxiaobei/hugo-paper).😷 🌾✍️👨‍🎓🙏😄😷🌟🌾
     socialIcons:
         - name: github
           url: "https://github.com/jaisong-sith"
