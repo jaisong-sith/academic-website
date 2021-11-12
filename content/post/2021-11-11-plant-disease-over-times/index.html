@@ -11,7 +11,7 @@ tags: ["Plant Disease", "ggplot"]
 <script src="{{< blogdown/postref >}}index_files/pagedtable/js/pagedtable.js"></script>
 
 
-<p><a href="https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/default.aspx">referance</a></p>
+<p>บทความนี้เขียนขึ้นโดยอ้างอิงมาจาก <a href="https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/default.aspx">referance</a></p>
 <div id="เกรน" class="section level1">
 <h1>เกริ่น</h1>
 <p>การทำความเข้าใจว่าระดับโรคเพิ่มขึ้นหรือลดลงเมื่อเวลาผ่านไปอย่างไรเป็นหนึ่งในองค์ประกอบพื้นฐานที่สุดของระบาดวิทยาและนิเวศวิทยาของโรคพืช แบบจำลองทางสถิติมักถูกนำมาใช้เพื่อสรุปและอธิบายความซับซ้อนนี้ เพื่อให้เข้าใจกระบวนการของโรคได้ง่ายขึ้น ตัวอย่างเช่น การเปรียบเทียบระหว่างรูปแบบของการพัฒนาของโรคสำหรับโรค พันธุ์ การจัดการ หรือสภาพแวดล้อมที่แตกต่างกัน สามารถช่วยในการพิจารณาว่าจะสามาระจัดการกับโรคพืชได้ดีที่สุดได้อย่างไร ซึ่งจะนำเสนอและอธิบายพื้นฐานทางคณิตศาสตร์และชีววิทยาของการพัฒนาของโรคพืชเมื่อเวลาผ่านไป ในการนี้ จะนำเสนอตัวอย่างการศึกษาด้านระบาดวิทยาของโรคพืช โดยใช้โปรแกรม R เพื่อแสดงให้เห็นวิธีต่างๆ ในการอธิบายการพัฒนาของโรคในช่วงเวลาต่างๆ</p>
@@ -58,8 +58,8 @@ paged_table(npop_data)</code></pre>
   </script>
 </div>
 </div>
-<div id="พลวตประชากรใสเดไสเดอนฝอย" class="section level2">
-<h2>พลวัติประชากรใส้เดืไส้เดือนฝอย</h2>
+<div id="พลวตประชากรใสเดอนไสเดอนฝอย" class="section level2">
+<h2>พลวัติประชากรใส้เดือนไส้เดือนฝอย</h2>
 <p>ตอนนี้ จะแสดงแนวโน้มประชากรของใส้เดือนฝอยกับอุณหภูมิของดิน ในลักษณะ climatograph การทำใน R นั้น อาจจะมีความซับซ้อน นิดหน่อย อาจจะศึกษาเพิ่มจาก <a href="https://www.r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html">ref:line-chart-dual-Y-axis-ggplot2</a> ได้</p>
 <p>โดยทำขอให้ลองวาด โดยเฉพาะแกน ว่า scale เท่าไหร่ ที่จะสร้าง</p>
 <pre class="r"><code>ylim.pop &lt;- c(0, 1200)   # กำหนด แกน  Y ด้านซ้าย (หลัก)

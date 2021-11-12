@@ -9,7 +9,7 @@ buildDrafts: false
 buildFuture: false
 buildExpired: false
 enableEmoji: true
-googleAnalytics: UA-134994886-1 
+googleAnalytics: UA-134994886-1
 
 minify:
     disableXML: true
@@ -77,12 +77,12 @@ params:
               url: tags
 
     homeInfoParams:
-        Title: "Into R and SJ " 
+        Title: "Into R and SJ "
         Content: >
-            🙏 Welcome to demo of hugo's theme PaperMod. 😄
-            - **PaperMod** is a simple but fast and responsive theme with useful feature-set that enhances UX.
-            - Do give a 🌟 on Github ! 
-            - PaperMod is based on theme [Paper](https://github.com/nanxiaobei/hugo-paper).😷 🌾✍️👨‍🎓🙏😄😷🌟🌾
+            🙏 สวัสดีครับ ดีใจที่เข้ามาหา blog ของผมนะครับ 😄 ผมทำงานเป็นนักวิจัยด้านข้าว 🌾 ที่ กรมการข้าว
+            - ผมตั้งใจเขียน blog นี้ขั้นมาเพื่อถ่ายทอดความรู้ด้าน การระบาดของโรคข้าว และ โปรแกรม R ซึ่งเป็น เรื่องที่ผมเรียนจบมา 👨‍🎓
+            - ผมจะพยายามเขียน ✍️ และ อัพ blog ทุกวันจันทร์ และ วันศุกร์ 🗓️ และถ้ามีคำถามสามารถสอบถามได้ที่ ✉️ (sith.jaisong@gmail.com)
+            - ขอให้ทุกคนรักษาสุขภาพ 😷 🙏😄😷🌟🌾
     socialIcons:
         - name: github
           url: "https://github.com/jaisong-sith"

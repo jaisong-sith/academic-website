@@ -5,8 +5,7 @@ date: '2021-11-10'
 categories: ["R", "PDE"]
 tags: ["Plant Disease", "ggplot"]
 ---
-
-[referance](https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/default.aspx)
+บทความนี้เขียนขึ้นโดยอ้างอิงมาจาก [referance](https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/default.aspx)
 
 # เกริ่น
 การทำความเข้าใจว่าระดับโรคเพิ่มขึ้นหรือลดลงเมื่อเวลาผ่านไปอย่างไรเป็นหนึ่งในองค์ประกอบพื้นฐานที่สุดของระบาดวิทยาและนิเวศวิทยาของโรคพืช แบบจำลองทางสถิติมักถูกนำมาใช้เพื่อสรุปและอธิบายความซับซ้อนนี้ เพื่อให้เข้าใจกระบวนการของโรคได้ง่ายขึ้น ตัวอย่างเช่น การเปรียบเทียบระหว่างรูปแบบของการพัฒนาของโรคสำหรับโรค พันธุ์ การจัดการ หรือสภาพแวดล้อมที่แตกต่างกัน สามารถช่วยในการพิจารณาว่าจะสามาระจัดการกับโรคพืชได้ดีที่สุดได้อย่างไร ซึ่งจะนำเสนอและอธิบายพื้นฐานทางคณิตศาสตร์และชีววิทยาของการพัฒนาของโรคพืชเมื่อเวลาผ่านไป ในการนี้ จะนำเสนอตัวอย่างการศึกษาด้านระบาดวิทยาของโรคพืช โดยใช้โปรแกรม R เพื่อแสดงให้เห็นวิธีต่างๆ ในการอธิบายการพัฒนาของโรคในช่วงเวลาต่างๆ
@@ -48,7 +47,7 @@ npop_data <- tibble(month = c("Jan", "Feb", "Mar", "Apr","May","Jun","Jul","Aug"
 
 paged_table(npop_data)
 ```
-## พลวัติประชากรใส้เดืไส้เดือนฝอย
+## พลวัติประชากรใส้เดือนไส้เดือนฝอย
 ตอนนี้ จะแสดงแนวโน้มประชากรของใส้เดือนฝอยกับอุณหภูมิของดิน ในลักษณะ climatograph การทำใน R นั้น อาจจะมีความซับซ้อน นิดหน่อย อาจจะศึกษาเพิ่มจาก [ref:line-chart-dual-Y-axis-ggplot2](https://www.r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html) ได้
 
 โดยทำขอให้ลองวาด โดยเฉพาะแกน ว่า scale เท่าไหร่ ที่จะสร้าง
@@ -70,4 +69,3 @@ ggplot(npop_data, aes(x = month, group = 1)) +
                      sec.axis = sec_axis(~./coeff, name = "Soil Temperature (C)")) +
   ggtitle("Nematode population")
 ```
-
