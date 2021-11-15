@@ -1,0 +1,88 @@
+---
+title: "Homogeneity test in R"
+author: "Sith Jaisong"
+date: '2021-10-01'
+categories:
+- R
+- ANOVA
+tags:
+- Plant Disease
+- Stat
+---
+
+## ทำไมต้องวิเคราะห์
+
+ก่อนที่เราจะทำการวิเคราะห์ ANOVA เราจะต้องตรวจ ว่า assumption ของ ANOVA นั้น ผ่านหรือไม่ เมื่อเราต้องการเปรียบเทียบ กลุ่มตัวอย่าง 2 กลุ่ม หรือ มากกว่า ว่ามีค่าเฉลี่ยแตกต่างกันหรือไม่ทางสถิติ (ผมไม่ได้เป็นนักสถิติจริงจัง ผมเอาแค่ใช้งาน ดังนั้นต่อไปนี้อ่านไว้เฉยๆ อย่าไปอางอิงอะไรนะครับ)
+
+ความแปรปรวนต้องไม่แตกต่างกันอย่างมีนัยทางสถิติ นั้นก็คือ ไอ้เขาสองลูกนี้ ควรจะไม่แตกต่างกันมากนัก ถึงจะเอามาเปรียบเทียบกันได้ จริงไหม แล้วจะรู้ได้อย่างไร สมมุติ มี การทดลอง ชื่อ F10 กับ F50 วัดผลออกมาดังนี้ ผมเอาตัวอย่างข้อมูลจากหนังสือชื่อ สถิติ:การวางแผนการทดลองและการวิเคราะห์ข้อมูลในงานวิจัยด้านพืชด้วย R ของ ชูศักดิ์ จอมพุก
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+
+```{r echo=TRUE}
+F10 <- c(605, 583, 592, 602, 587, 595, 615, 612, 606)
+F50 <- c(779, 780, 797, 779, 778, 801, 785, 779, 771)
+test_data <- data.frame(F10, F50)
+```
+
+แล้วจะได้รูปแบบของข้อมูลแบบนี้มา
+
+```{r}
+test_data
+```
+
+บอกเลยว่า มันไม่ใช่โครงสร้างที่เราจะเหมาะจะมาวิเคราะห์ เลย หรือเอามาทำอะไรต่อ วิธีการ โดยการขอใช้ `gather()` จาก `tidyverse` package
+
+```{r echo=TRUE}
+library(tidyverse)
+tidy_data <- test_data %>% gather(key = "trt", value = "yield")
+tidy_data
+```
+
+แบบนี้มันถึงจะไปต่อแล้วรู้เรื่องการเชคความแปรปรวนนั้นมีหลายวิธี
+
+### F-test
+ทดสอบได้แค่ 2 กลุ่ม เท่านั้น
+
+```{r echo=TRUE}
+var.test(yield ~ trt, data = tidy_data)
+```
+
+### Bartlett's test
+อันนี้ แนะนำ ถ้านึกอะไรไม่ออก ให้นึกถึงอันนี้เลย โดยทั่วไปก็ใช้อันนี้กัน
+
+```{r echo=TRUE}
+bartlett.test(yield ~ trt, data = tidy_data)
+```
+
+เห็นไหมว่าผลมันก็ใกล้เคียงกัน
+
+### Levene's test
+อันนี้ใช้ใน SPSS ใน R ก็จะมีใน `car` package
+
+```{r echo=TRUE}
+library(car)
+leveneTest(yield ~ trt, data = tidy_data)
+```
+
+*p* มันจะต่างออก แต่ก็ไม่ต่างกันซะทีเดียว
+
+### Fligner-Killeen's test
+
+วิธีนี้ ค่อนข้างจะ robust กว่าวิธีอื่นๆ ถึงแม้ว่าจะมีการกระจายไม่ค่อยจะ normal เท่าไหร่
+
+```{r echo=TRUE}
+fligner.test(yield ~ trt, data = tidy_data)
+```
+
+ส่วนตัวไม่ติด ว่าจะใช้วิธีไหน แต่ขอให้บอกว่า ใช้อะไรทดสอบก็ พอ จำไว้ว่าถ้า Homogeneity of Variance ไม่ผ่านแล้ว assumption ของ parametric test ก็ไม่ผ่านเช่นกัน อาจจะต้องหันไปใช้วิธี Nonparametric test แทน
