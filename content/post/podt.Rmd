@@ -1,0 +1,111 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+#Calculating the Area under the disease progress curve to quantify disease progress
+
+# AUDPC คือ อะไร
+พื้นที่ใต้กราฟกาพัฒนาของโรค (Area Under Disease progress Curve: AUDPC) ต่อจากนี้จะ พูดสั้น ๆ ว่า **พื้นที่ใต้กราฟ** หรือ **AUDPC** เป็นข้อมูลสรุปเชิงปริมาณ (ข้อย้ำว่าเป็นข้อมูลสรุป เพราะว่า  1  กราฟ มีแค่ค่าเดียว) ใช้เพื่อบ่งปริมาณของความรุนแรงของโรคในช่วงเวลาหนึ่งเพื่อเปรียบเทียบ ช่วงเวลาหนึ่ง ๆ เช่น ฤดู ปี สถานที่ หรือ วิธีการจัดการ
+
+ วิธีการที่ใช้บ่อยที่สุดในการประมาณค่า AUDPC คือการแยกคิดพื้นที่ใต้กราฟเป็นช่วง ๆ ซึ่งสามารถพิจารณาจุดเวลาในลำดับ ($$t_{i}$$) โดยที่ช่วงเวลาระหว่างจุดเวลาสองจุดอาจสอดคล้องกันหรืออาจแตกต่างกันไป ที่ค่าความเกิดหรือความรุนแรงของโรคที่เวลาหนึ่ง ๆ  $$y_{i}$$ เรากำหนด ความรุนแรงของโรคที่เวลา 0  กำหนด $$y_{0}$$ ที่เวลา $$t_{0}$$ ซึ่งคือ การสังเกตความรุนแรงของโรคครั้งแรกในการศึกษาของเรา A (tk) AUDPC ที่ $$t = t_{k}$$ คือค่าการสะสมของโรคทั้่งหมดจนถึงเวลา $$t_{k}$$ ที่กำหนด โดยตามสูตรคณิตศาสตร์
+ ![](https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/PublishingImages/D1_E1.png#center)
+
+ แสดงให้เห็นเป็นภาพจะเข้าใจได้ง่ายกว่า โดยจะให้ดู 2 package ที่สามารถคำนวนค่า AUDPC ได้
+
+สำหรับ agricolae นั้น มีสอนเกี่ยวกับ AUDPC ด้วย ด้วยตคำสั่งข้างล่างนี้
+```{r example, eval=FALSE, include=FALSE}
+# not run
+library(agricolae)
+ example("audpc", package = "agricolae")
+```
+
+```{r audpc graph, echo=FALSE}
+dates<-c(14,21,28) # days
+evaluation <- data.frame(E1=40,E2=80,E3=90) # percentages
+
+plot(dates, evaluation, type = "h", ylim = c(0,100), col="red", axes=FALSE)
+title(cex.main=0.8,main="Absolute or Relative AUDPC\nTotal area = 100*(28-14)=1400")
+lines(dates,evaluation,col="red")
+text(dates,evaluation+5,evaluation)
+text(18,20,"A = (21-14)*(80+40)/2")
+text(25,60,"B = (28-21)*(90+80)/2")
+text(25,40,"audpc = A+B = 1015")
+text(24.5,33,"relative = audpc/area = 0.725")
+abline(h=0)
+axis(1,dates)
+axis(2,seq(0,100,5),las=2)
+lines(rbind(c(14,40),c(14,100)),lty=8,col="green")
+lines(rbind(c(14,100),c(28,100)),lty=8,col="green")
+lines(rbind(c(28,90),c(28,100)),lty=8,col="green")
+```
+
+เมื่อมาคิด AUDPC โดยแบ่งพื้นที่ใต้กราฟออกเป็นช่วง จะได้ พื้นที้ สี่เหลี่ยม A และ B ตามรูป
+
+และ AUDPC = A + B ของโรคในช่วงเวลา 14 ถึง 21 วัน หรือจะคำนวนของเป็นค่า Relative AUDPC นำมาหารกับพื้นที่ทั้งหมด จากรูปคือกรอบสีเขียวทั้งหมด
+
+
+## agricolae::audpc()
+ 
+```{r}
+library(agricolae)
+data(disease)
+disease
+paged_table(disease)
+```
+
+
+```{r}
+tidy_disease <- disease %>% gather(key = "E_at", value = "disease_incidence", -plots, -rep, -trt, -yield)
+
+tidy_disease %>% ggplot(aes(x = E_at, y = disease_incidence, color = trt, group = plots)) + 
+  geom_point() + geom_line() + theme_light()
+```
+
+```{r}
+dates <- c(1, 2, 3) # week
+evaluation <- disease[,c(4, 5, 6)]
+audpc(evaluation, dates, type = "absolute")
+
+rlt_audpc <-audpc(evaluation, dates, type = "relative")
+```
+
+```{r}
+# Correlation between the yield and audpc
+correlation(disease$yield, index, method = "kendall")
+```
+
+
+## epifiter::AUDPC()
+
+```{r}
+library(tidyverse)
+library('epifitter')
+pepper <-
+  tibble::tribble(
+    ~time, ~var1, ~var2, ~var3,
+    0, 0.08, 0.001, 0.001,
+    7, 0.13, 0.01, 0.001,
+    14, 0.78, 0.09, 0.01,
+    21, 0.92, 0.25, 0.05,
+    28, 0.99, 0.8, 0.18,
+    35, 0.995, 0.98, 0.34,
+    42, 0.999, 0.99, 0.48,
+    49, 0.999, 0.999, 0.74
+  )
+paged_table(pepper)
+```
+
+```{r}
+ggplot(pepper, aes(time, var1))+
+  geom_point()+
+  geom_line()+
+  theme_light() +
+  ylab("Disease severity") +
+  xlab("Time (day)")
+```
+
+```{r}
+AUDPC(time = pepper$time, y = pepper$var1, y_proportion = TRUE)
+AUDPS(time = pepper$time, y = pepper$var1, y_proportion = TRUE)
+```

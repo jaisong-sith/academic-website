@@ -1,0 +1,83 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>#Calculating the area under the disease progress curve to quantify disease progress</p>
+<div id="audpc-คอ-อะไร" class="section level1">
+<h1>AUDPC คือ อะไร</h1>
+<p>พื้นที่ใต้กราฟกาพัฒนาของโรค (Area Under Disease progress Curve: AUDPC) ต่อจากนี้จะ พูดสั้น ๆ ว่า <strong>พื้นที่ใต้กราฟ</strong> หรือ <strong>AUDPC</strong> เป็นข้อมูลสรุปเชิงปริมาณ (ข้อย้ำว่าเป็นข้อมูลสรุป เพราะว่า 1 กราฟ มีแค่ค่าเดียว) ใช้เพื่อบ่งปริมาณของความรุนแรงของโรคในช่วงเวลาหนึ่งเพื่อเปรียบเทียบ ช่วงเวลาหนึ่ง ๆ เช่น ฤดู ปี สถานที่ หรือ วิธีการจัดการ</p>
+<p>วิธีการที่ใช้บ่อยที่สุดในการประมาณค่า AUDPC คือการแยกคิดพื้นที่ใต้กราฟเป็นช่วง ๆ ซึ่งสามารถพิจารณาจุดเวลาในลำดับ (<span class="math display">\[t_{i}\]</span>) โดยที่ช่วงเวลาระหว่างจุดเวลาสองจุดอาจสอดคล้องกันหรืออาจแตกต่างกันไป ที่ค่าความเกิดหรือความรุนแรงของโรคที่เวลาหนึ่ง ๆ <span class="math display">\[y_{i}\]</span> เรากำหนด ความรุนแรงของโรคที่เวลา 0 กำหนด <span class="math display">\[y_{0}\]</span> ที่เวลา <span class="math display">\[t_{0}\]</span> ซึ่งคือ การสังเกตความรุนแรงของโรคครั้งแรกในการศึกษาของเรา A (tk) AUDPC ที่ <span class="math display">\[t = t_{k}\]</span> คือค่าการสะสมของโรคทั้่งหมดจนถึงเวลา <span class="math display">\[t_{k}\]</span> ที่กำหนด โดยตามสูตรคณิตศาสตร์
+<img src="https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/PublishingImages/D1_E1.png#center" /></p>
+<p>แสดงให้เห็นเป็นภาพจะเข้าใจได้ง่ายกว่า โดยจะให้ดู 2 package ที่สามารถคำนวนค่า AUDPC ได้</p>
+<p>สำหรับ agricolae นั้น มีสอนเกี่ยวกับ AUDPC ด้วย ด้วยตคำสั่งข้างล่างนี้</p>
+<p><img src="/post/podt_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>เมื่อมาคิด AUDPC โดยแบ่งพื้นที่ใต้กราฟออกเป็นช่วง จะได้ พื้นที้ สี่เหลี่ยม A และ B ตามรูป</p>
+<p>และ AUDPC = A + B ของโรคในช่วงเวลา 14 ถึง 21 วัน หรือจะคำนวนของเป็นค่า Relative AUDPC นำมาหารกับพื้นที่ทั้งหมด จากรูปคือกรอบสีเขียวทั้งหมด</p>
+</div>
+<div id="agricolaeaudpc" class="section level1">
+<h1>agricolae::audpc()</h1>
+<pre class="r"><code>library(agricolae)
+data(disease)
+disease</code></pre>
+<pre><code>##    plots rep trt E2 E5 E7 yield
+## 1    101   1  T1  4  9 10    16
+## 2    102   1  T2  3  6  7    11
+## 3    103   1  T3  3  4  6    24
+## 4    104   1  T4  0  0  2    27
+## 5    105   1  T5  0  0  2    28
+## 6    106   1  T6  2  2  4    23
+## 7    107   1  T0  7 14 23    11
+## 8    201   2  T1  6 12 14    14
+## 9    202   2  T2  3  7 14    18
+## 10   203   2  T3  2  3  5    26
+## 11   204   2  T4  2  4  8    15
+## 12   205   2  T5  0  0  2    26
+## 13   206   2  T6  1  2  4    14
+## 14   207   2  T0  6 16 21    12
+## 15   301   3  T1  7  8 12    14
+## 16   302   3  T2  8 11 14    16
+## 17   303   3  T3  3  5 13    10
+## 18   304   3  T4  5 12 15    11
+## 19   305   3  T5  2  9 15    10
+## 20   306   3  T6  3  6 12    11
+## 21   307   3  T0 11 21 35     8</code></pre>
+<pre class="r"><code>dates &lt;- c(1,2,3) # week
+evaluation &lt;- disease[,c(4,5,6)]
+index &lt;-audpc(evaluation, dates, type = &quot;relative&quot;)</code></pre>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.5     ✓ purrr   0.3.4
+## ✓ tibble  3.1.6     ✓ dplyr   1.0.7
+## ✓ tidyr   1.1.4     ✓ stringr 1.4.0
+## ✓ readr   2.0.2     ✓ forcats 0.5.1</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(&#39;epifitter&#39;)
+pepper &lt;-
+  tibble::tribble(
+    ~time, ~var1, ~var2, ~var3,
+    0, 0.08, 0.001, 0.001,
+    7, 0.13, 0.01, 0.001,
+    14, 0.78, 0.09, 0.01,
+    21, 0.92, 0.25, 0.05,
+    28, 0.99, 0.8, 0.18,
+    35, 0.995, 0.98, 0.34,
+    42, 0.999, 0.99, 0.48,
+    49, 0.999, 0.999, 0.74
+  )</code></pre>
+<pre class="r"><code>ggplot(pepper, aes(time, var1))+
+  geom_point()+
+  geom_line()+
+  theme_light()</code></pre>
+<p><img src="/post/podt_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>AUDPC(time = pepper$time, y = pepper$var1, y_proportion = TRUE)</code></pre>
+<pre><code>## [1] 37.4745</code></pre>
+<pre class="r"><code>AUDPS(time = pepper$time, y = pepper$var1, y_proportion = TRUE)</code></pre>
+<pre><code>## [1] 41.251</code></pre>
+</div>
