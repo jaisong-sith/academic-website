@@ -1,0 +1,125 @@
+---
+title: "Homogeneity test in R"
+author: "Sith Jaisong"
+date: '2021-10-01'
+categories:
+- R
+- ANOVA
+tags:
+- Plant Disease
+- Stat
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="ทำไมตองวเคราะห" class="section level2">
+<h2>ทำไมต้องวิเคราะห์</h2>
+<p>ก่อนที่เราจะทำการวิเคราะห์ ANOVA เราจะต้องตรวจ ว่า assumption ของ ANOVA นั้น ผ่านหรือไม่ เมื่อเราต้องการเปรียบเทียบ กลุ่มตัวอย่าง 2 กลุ่ม หรือ มากกว่า ว่ามีค่าเฉลี่ยแตกต่างกันหรือไม่ทางสถิติ (ผมไม่ได้เป็นนักสถิติจริงจัง ผมเอาแค่ใช้งาน ดังนั้นต่อไปนี้อ่านไว้เฉยๆ อย่าไปอางอิงอะไรนะครับ)</p>
+<p>ความแปรปรวนต้องไม่แตกต่างกันอย่างมีนัยทางสถิติ นั้นก็คือ ไอ้เขาสองลูกนี้ ควรจะไม่แตกต่างกันมากนัก ถึงจะเอามาเปรียบเทียบกันได้ จริงไหม แล้วจะรู้ได้อย่างไร สมมุติ มี การทดลอง ชื่อ F10 กับ F50 วัดผลออกมาดังนี้ ผมเอาตัวอย่างข้อมูลจากหนังสือชื่อ สถิติ:การวางแผนการทดลองและการวิเคราะห์ข้อมูลในงานวิจัยด้านพืชด้วย R ของ ชูศักดิ์ จอมพุก</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.0.2     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)</code></pre>
+<pre class="r"><code>F10 &lt;- c(605, 583, 592, 602, 587, 595, 615, 612, 606)
+F50 &lt;- c(779, 780, 797, 779, 778, 801, 785, 779, 771)
+test_data &lt;- data.frame(F10, F50)</code></pre>
+<p>แล้วจะได้รูปแบบของข้อมูลแบบนี้มา</p>
+<pre class="r"><code>test_data</code></pre>
+<pre><code>##   F10 F50
+## 1 605 779
+## 2 583 780
+## 3 592 797
+## 4 602 779
+## 5 587 778
+## 6 595 801
+## 7 615 785
+## 8 612 779
+## 9 606 771</code></pre>
+<p>บอกเลยว่า มันไม่ใช่โครงสร้างที่เราจะเหมาะจะมาวิเคราะห์ เลย หรือเอามาทำอะไรต่อ วิธีการ โดยการขอใช้ <code>gather()</code> จาก <code>tidyverse</code> package</p>
+<pre class="r"><code>library(tidyverse)
+tidy_data &lt;- test_data %&gt;% gather(key = &quot;trt&quot;, value = &quot;yield&quot;)
+tidy_data</code></pre>
+<pre><code>##    trt yield
+## 1  F10   605
+## 2  F10   583
+## 3  F10   592
+## 4  F10   602
+## 5  F10   587
+## 6  F10   595
+## 7  F10   615
+## 8  F10   612
+## 9  F10   606
+## 10 F50   779
+## 11 F50   780
+## 12 F50   797
+## 13 F50   779
+## 14 F50   778
+## 15 F50   801
+## 16 F50   785
+## 17 F50   779
+## 18 F50   771</code></pre>
+<p>แบบนี้มันถึงจะไปต่อแล้วรู้เรื่องการเชคความแปรปรวนนั้นมีหลายวิธี</p>
+<div id="f-test" class="section level3">
+<h3>F-test</h3>
+<p>ทดสอบได้แค่ 2 กลุ่ม เท่านั้น</p>
+<pre class="r"><code>var.test(yield ~ trt, data = tidy_data)</code></pre>
+<pre><code>## 
+##  F test to compare two variances
+## 
+## data:  yield by trt
+## F = 1, num df = 8, denom df = 8, p-value = 0.7
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.295 5.796
+## sample estimates:
+## ratio of variances 
+##               1.31</code></pre>
+</div>
+<div id="bartletts-test" class="section level3">
+<h3>Bartlett’s test</h3>
+<p>อันนี้ แนะนำ ถ้านึกอะไรไม่ออก ให้นึกถึงอันนี้เลย โดยทั่วไปก็ใช้อันนี้กัน</p>
+<pre class="r"><code>bartlett.test(yield ~ trt, data = tidy_data)</code></pre>
+<pre><code>## 
+##  Bartlett test of homogeneity of variances
+## 
+## data:  yield by trt
+## Bartlett&#39;s K-squared = 0.1, df = 1, p-value = 0.7</code></pre>
+<p>เห็นไหมว่าผลมันก็ใกล้เคียงกัน</p>
+</div>
+<div id="levenes-test" class="section level3">
+<h3>Levene’s test</h3>
+<p>อันนี้ใช้ใน SPSS ใน R ก็จะมีใน <code>car</code> package</p>
+<pre class="r"><code>library(car)
+leveneTest(yield ~ trt, data = tidy_data)</code></pre>
+<pre><code>## Levene&#39;s Test for Homogeneity of Variance (center = median)
+##       Df F value Pr(&gt;F)
+## group  1    0.64   0.43
+##       16</code></pre>
+<p><em>p</em> มันจะต่างออก แต่ก็ไม่ต่างกันซะทีเดียว</p>
+</div>
+<div id="fligner-killeens-test" class="section level3">
+<h3>Fligner-Killeen’s test</h3>
+<p>วิธีนี้ ค่อนข้างจะ robust กว่าวิธีอื่นๆ ถึงแม้ว่าจะมีการกระจายไม่ค่อยจะ normal เท่าไหร่</p>
+<pre class="r"><code>fligner.test(yield ~ trt, data = tidy_data)</code></pre>
+<pre><code>## 
+##  Fligner-Killeen test of homogeneity of variances
+## 
+## data:  yield by trt
+## Fligner-Killeen:med chi-squared = 0.6, df = 1, p-value = 0.4</code></pre>
+<p>ส่วนตัวไม่ติด ว่าจะใช้วิธีไหน แต่ขอให้บอกว่า ใช้อะไรทดสอบก็ พอ จำไว้ว่าถ้า Homogeneity of Variance ไม่ผ่านแล้ว assumption ของ parametric test ก็ไม่ผ่านเช่นกัน อาจจะต้องหันไปใช้วิธี Nonparametric test แทน</p>
+</div>
+</div>

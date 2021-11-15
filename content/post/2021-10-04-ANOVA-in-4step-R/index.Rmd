@@ -1,0 +1,108 @@
+---
+title: "ANOVA in 4 steps"
+author: "Sith Jaisong"
+date: '2021-10-04'
+categories:
+- R
+- ANOVA
+tags:
+- Stat
+---
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+# เกริ่น
+ผมคนข้าง ๆ ตัวผม หลายคน ถามเรื่องการวิเคราะห์ ANOVA โดย โปรแกรม R ผมจะไม่อถิบายว่า ANOVA คืออะไร เพราะว่าถ้าถามแล้วแสดงว่า อยากจะวิเคราะห์ บางที ไม่รู้อะไร ก็ วิเคราะห์ ANOVA ไว้ก่อน โดยไม่สนอะไร เอาเป็นว่า สอนง่าย ๆ เลย  มี 4 ขั้นตอน ดังนี้
+1. สร้าง ANOVA object
+
+สร้าง ANOVA object ก่อน โดยใช้ฟังก์ชัน `aov()` ในฟังก์ชัน `aov()` ให้ระบุตัวแปรอิสระและตัวแปรตามด้วยสูตรที่มีรูปแบบ y ~ x1 + x2 โดยที่ y เป็นตัวแปรตาม และ x1, x2 … เป็นตัวแปรอิสระหนึ่งตัวห
+รือมากกว่า
+```{r eval=FALSE}
+# Step 1: Create an aov object
+mod.aov <- aov(formula = y ~ x1 + x2 + ...,
+               data = data)
+```
+2. สร้างตาราง ANOVA  
+สร้างตาราง ANOVA สรุปโดยใช้ฟังก์ชัน `summary()` กับ ANOVA object (ในที่นี่คือ mod.aov) ที่สร้างขึ้นในขั้นตอนที่ 1
+```{r eval=FALSE}
+# Step 2: Look at a summary of the aov object
+summary(mod.aov)
+```
+
+3. การทดสอบ post-hoc หากจำเป็น
+หากจำเป็น ให้ทดสอบ post-hoc โดยใช้ฟังก์ชัน post-hoc test เช่น `TukeyHSD()` กับ ANOVA object ที่คุณสร้างในขั้นตอนที่ 1
+```{r eval=FALSE}
+# Step 3: Calculate post-hoc tests
+TukeyHSD(mod.aov)
+```
+
+```{r eval=FALSE}
+library(agricolae)
+HSD.test(mod.aov, "Y", group = TRUE, console = TRUE)
+```
+
+4. แปลความลักษณะของความแตกต่างของกลุ่มทดสอบ (หากจำเป็น)
+้ตีความลักษณะของความแตกต่างของกลุ่ม โดยการสร้าง การถดถอยเชิงเส้นโดยใช้ `lm()` แทน `aov()` ในขั้นตอนที่ 1
+```{r eval=FALSE}
+# Step 4: Look at coefficients
+mod.lm <- lm(formula = y ~ x1 + x2 + ...,
+             data = data)
+
+summary(mod.lm)
+```
+5. ข้อนี้ผมอยากให้ทำ เพื่อ ตรวจ assumption ด้วย independence, homogeneity of variance และ Residuals vs fitted Values
+
+ถ้าอยากอ่านหรือทำความเข้าใจเกี่ยวกับ ANOVA มากขึ้น อยากแนะนำให้อ่าน [ANOVA Cookboo](https://benwhalley.github.io/just-enough-r/anova-cookbook.html#howell-factorial-example) จะเห็นอะไรที่น่าสนใจ
+
+# ตัวอย่าง
+
+```{r}
+data("InsectSprays")
+paged_table(InsectSprays)
+```
+
+```{r}
+ggplot(data = InsectSprays, aes(x = spray, y = count)) + geom_boxplot()
+```
+
+```{r}
+# step 1
+mod.aov <- aov(formula = count ~ spray, data = InsectSprays)
+mod.aov
+```
+
+```{r}
+# step 2
+summary(mod.aov)
+```
+
+```{r}
+# step 3
+TukeyHSD(mod.aov)
+```
+```{r}
+library(agricolae)
+out <- HSD.test(mod.aov, "spray")
+out$groups
+```
+
+
+```{r}
+# step 4
+mod.lm <- lm(formula = count ~ spray, data = InsectSprays)
+mod.lm
+```
+
+```{r}
+# step 5 แถมให้เพื่อตรวจ assumptions
+library(performance)
+check_model(mod.aov)
+```
