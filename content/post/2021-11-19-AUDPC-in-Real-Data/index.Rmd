@@ -1,0 +1,106 @@
+---
+title: "AUDPC in Real Data"
+author: "Sith Jaisong"
+date: '2021-11-19'
+categories:
+- R
+- PDE
+tags:
+- Plant Disease
+- ggplot
+- PDE
+---
+# เกริ่น
+บทความนี้จะมาแสดงให้เห็นประโยชน์และการใช้ประโยชน์ที่ได้จากการพิจารณาการพัฒนาของโรคเมื่อเวลาผ่านไปว่ามีความแตต่างกันอย่างไร ถ้าพันธุ์พืชไม่เหมือนกัน หรือ วิธีการจัดการที่แตกต่างกัน
+การศึกษารูปแบบการพัฒนาของโรคเมื่อเวลาผ่านไป จะช่วยตัดสินใจ เพื่อเลือกใช้ วิธีการใดเพื่อ ลดค่า AUDPC เพราะว่า ค่านี้ มีความสัมพันธุ์กับผลผลิต
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+# ตัวอย่างการศึกษาการต้านทานโรคและการใช้สารเคมีป้องกันกำจัดโรคต่อการพัฒนาของโรคสนิมในใบข้าวสาลี
+
+ผลกระทบของการต้านทานโรคและการใช้สารฆ่าเชื้อราต่อความก้าวหน้าของโรคสนิมในใบข้าวสาลีสามารถประเมินได้โดยใช้ AUDPC โดยทั่วไป การต้านทานเป็นวิธีที่ดีที่สุดในการควบคุมโรคทางใบในข้าวสาลี เช่น สนิมแถบและสนิมใบ (เกิดจาก **Puccinia triticina**)
+
+ข้อมูลแปลงจาก [Suggested exercise:Using the area under the disease progress curve to compare disease severity](https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/StripeRust.aspx) แสดงให้เห็นถึงความแตกต่างในความรุนแรงของโรคสำหรับพันธุ์ที่ไวต่อการเกิดสนิมของพันธุ์ Jagger และ พันธุ์ต้านทาน 2137 และ Cutter
+นอกจากนี้ การทดลองนี้ศึกษาเรื่องระยะเวลาการฉีดพ้นสารป้องกันกำจัดโรค ซึ่งระยะเวลาเป็นสิ่งสำคัญ หากจะใช้สารเคมีกำจัดโรคเพื่อควบคุมโรคราสนิมของข้าวสาลี โดยทั่วไป สารเคมีป้องกันกำจัดเชื้อราจะมีผลเพียงสองสัปดาห์หลังการใช้ เพื่อป้องกันการติดเชื้อใหม่ในช่วงเวลานั้น และไม่แนะนำให้ใช้หลังออกดอก ดังนั้นช่วงเวลาที่สำคัญสำหรับการใช้สารเคมีป้องกันกำจัดโรคคือ 2 สัปดาห์ก่อนออกดอก การสูญเสียพื้นทีใบเพื่อ่สังเคราะห์แสงจะส่งผลให้สูญเสียผลผลิตมากที่สุด เมื่อพ้นช่วง 2 สัปดาห์นี้ การสูญเสียการติดเชื้อครั้งใหม่จะรุนแรงน้อยกว่ามาก
+
+```{r}
+library(tidyverse) # เพื่อจักการขอ้มูล
+library(stringr) # เพือจัดการข้อมูล
+library(epifitter) # เพื่อใช้ AUDPC()
+```
+## ข้อมูล
+```{r}
+rust_dat <- read_csv(file = "https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Documents/FungicideExample.csv", col_types = "ddddddd" )
+rust_dat
+```
+ข้อมูลตาราง 7 ตัวแปร Julian.Date คือ วันที่ของปี ซึ่งประเมินโรค 9 ครั้ง ทุก ๆ 7 วัน เริ่มตั้งแต่วันที่ 97 คือวันที่ 97 104 11 118 125 132 139 146 154 บันทึกใน คอลัมน์ต่อไปๆ คือ พันธ์ข้าวสาลต่าง ๆ และ ีที่ไม่ฉีดพ้น
+
+จากโครงสร้างข้อมูลนี้ ยังไม่พร้อมที่จะ นำมาวิเคราะห์ จึงต้องจัดโครงสร้างใหม่
+```{r}
+tidy_rust <- rust_dat %>% pivot_longer(TwentyOneThirtySevenWheat:JaggerWheat.Trt, names_to = "Treatment", values_to = "Severity")
+paged_table(tidy_rust)
+```
+โครงสร้างข้อมูลพร้อมวิเคราะห์ต่อแล้ว
+ต่อไป ดูกราฟ การพัฒนาของโรคเมื่อเวลาผ่านไปว่าแต่ละกรรมวิธีนั้น เป็นอย่างไรนั้น
+
+```{r}
+tidy_rust %>%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line() + labs(color = "Treatment")
+```
+ถ้ามาดูกราฟ แยกกันในแต่ละพันธุ์ เปรียบเทียบระหว่าง ไม่พ้นสารเคมี กับพ่น
+```{r}
+Cutter_p <- tidy_rust %>%
+  filter(str_detect(Treatment, "Cutter")) %>%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Jagger_p <- tidy_rust %>%
+  filter(str_detect(Treatment, "Jagger")) %>%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Twenty_p <- tidy_rust %>%
+  filter(str_detect(Treatment, "Twenty")) %>%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Cutter_p + Jagger_p + Twenty_p
+```
+จะเห็นชัดเจนมากขึ้นว่า ถ้าฉีดพ้นแล้ว การพัฒนาของโรคพืชเมื่อเวลาผ่านไปลดลง
+
+```{r}
+Var_p <- tidy_rust %>%
+  filter(!str_detect(Treatment, "rt$")) %>%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+Var_p
+```
+ข้อมูลชุดนี้เอง ก็สามารถบ่งบอกว่าพันธุ์ใดมีความต้านทานต่อโรคราสนิมมากกว่ากัน จากกราฟ ก็พอจะบอกได้ว่า พันธุ์ Cutter นั้น ต้านทานโรคมากกว่าอีก 2 พันธุ์
+
+มาดูวิธีการวิเคราะห์หาค่า AUDPC กันด้วย `epifitter::AUDPC()` มันมีทริคนิดหน่วยครับ เพราะว่า function ถูกออกแบบมาให้คำนวน audpc ข้อมูลชุดใดชุดหนึ่ง ดังนั้นถ้า ชุดข้อมูลมีหลาย Treatment ก็จะต้อง คำนวน audpc แต่ละ Treament ซึ่ง อาสจจะต้อง subset ข้อมูลก่อนแล้วจึงจะ คำนวนหาค่า audpc ได้
+
+ซึ่งสำหรับข้อมูลจริง อาจจะต้องพึ่ง package `tidyr` และ `purrr` ดังตัวอย่างที่ทำให้ดู
+
+ืnested ข้อมูลส่วนที่เป็น Julian.Date และ Severity ด้วยการ `group_by` และ `nest`
+```{r}
+nst_rust <- tidy_rust %>% group_by(Treatment) %>% nest()
+nst_rust
+```
+ต่อจากนั้น `map_dbl` ต่อโดยรวบ function `AUDPC`
+
+```{r}
+rust_audpc <- nst_rust %>% mutate(audpc = map_dbl(data, ~AUDPC(time = .x$Julian.Date, y = .x$Severity)))
+
+```
+ได้ ค่า AUDPC ใน column ชื่อ audpc
+
+ลอง plot กราฟ ดู
+```{r}
+rust_audpc %>% ggplot(aes(x = Treatment, y = audpc)) + geom_col() + coord_flip()
+```
+ลองเอาไปฝึกกันดูนะ

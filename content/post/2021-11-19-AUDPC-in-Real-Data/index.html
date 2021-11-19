@@ -1,0 +1,124 @@
+---
+title: "AUDPC in Real Data"
+author: "Sith Jaisong"
+date: '2021-11-19'
+categories:
+- R
+- PDE
+tags:
+- Plant Disease
+- ggplot
+- PDE
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+<link href="{{< blogdown/postref >}}index_files/pagedtable/css/pagedtable.css" rel="stylesheet" />
+<script src="{{< blogdown/postref >}}index_files/pagedtable/js/pagedtable.js"></script>
+
+
+<div id="เกรน" class="section level1">
+<h1>เกริ่น</h1>
+<p>บทความนี้จะมาแสดงให้เห็นประโยชน์และการใช้ประโยชน์ที่ได้จากการพิจารณาการพัฒนาของโรคเมื่อเวลาผ่านไปว่ามีความแตต่างกันอย่างไร ถ้าพันธุ์พืชไม่เหมือนกัน หรือ วิธีการจัดการที่แตกต่างกัน
+การศึกษารูปแบบการพัฒนาของโรคเมื่อเวลาผ่านไป จะช่วยตัดสินใจ เพื่อเลือกใช้ วิธีการใดเพื่อ ลดค่า AUDPC เพราะว่า ค่านี้ มีความสัมพันธุ์กับผลผลิต</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.0     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)</code></pre>
+</div>
+<div id="ตวอยางการศกษาการตานทานโรคและการใชสารเคมปองกนกำจดโรคตอการพฒนาของโรคสนมในใบขาวสาล" class="section level1">
+<h1>ตัวอย่างการศึกษาการต้านทานโรคและการใช้สารเคมีป้องกันกำจัดโรคต่อการพัฒนาของโรคสนิมในใบข้าวสาลี</h1>
+<p>ผลกระทบของการต้านทานโรคและการใช้สารฆ่าเชื้อราต่อความก้าวหน้าของโรคสนิมในใบข้าวสาลีสามารถประเมินได้โดยใช้ AUDPC โดยทั่วไป การต้านทานเป็นวิธีที่ดีที่สุดในการควบคุมโรคทางใบในข้าวสาลี เช่น สนิมแถบและสนิมใบ (เกิดจาก <strong>Puccinia triticina</strong>)</p>
+<p>ข้อมูลแปลงจาก <a href="https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/StripeRust.aspx">Suggested exercise:Using the area under the disease progress curve to compare disease severity</a> แสดงให้เห็นถึงความแตกต่างในความรุนแรงของโรคสำหรับพันธุ์ที่ไวต่อการเกิดสนิมของพันธุ์ Jagger และ พันธุ์ต้านทาน 2137 และ Cutter
+นอกจากนี้ การทดลองนี้ศึกษาเรื่องระยะเวลาการฉีดพ้นสารป้องกันกำจัดโรค ซึ่งระยะเวลาเป็นสิ่งสำคัญ หากจะใช้สารเคมีกำจัดโรคเพื่อควบคุมโรคราสนิมของข้าวสาลี โดยทั่วไป สารเคมีป้องกันกำจัดเชื้อราจะมีผลเพียงสองสัปดาห์หลังการใช้ เพื่อป้องกันการติดเชื้อใหม่ในช่วงเวลานั้น และไม่แนะนำให้ใช้หลังออกดอก ดังนั้นช่วงเวลาที่สำคัญสำหรับการใช้สารเคมีป้องกันกำจัดโรคคือ 2 สัปดาห์ก่อนออกดอก การสูญเสียพื้นทีใบเพื่อ่สังเคราะห์แสงจะส่งผลให้สูญเสียผลผลิตมากที่สุด เมื่อพ้นช่วง 2 สัปดาห์นี้ การสูญเสียการติดเชื้อครั้งใหม่จะรุนแรงน้อยกว่ามาก</p>
+<pre class="r"><code>library(tidyverse) # เพื่อจักการขอ้มูล
+library(stringr) # เพือจัดการข้อมูล
+library(epifitter) # เพื่อใช้ AUDPC()</code></pre>
+<div id="ขอมล" class="section level2">
+<h2>ข้อมูล</h2>
+<pre class="r"><code>rust_dat &lt;- read_csv(file = &quot;https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Documents/FungicideExample.csv&quot;, col_types = &quot;ddddddd&quot; )
+rust_dat</code></pre>
+<pre><code>## # A tibble: 9 x 7
+##   Julian.Date TwentyOneThirtySev~ TwentyOneThirtySe~ CutterWheat CutterWheat.Trt
+##         &lt;dbl&gt;               &lt;dbl&gt;              &lt;dbl&gt;       &lt;dbl&gt;           &lt;dbl&gt;
+## 1          97                0                  0           0               0   
+## 2         104                0                  0           0               0   
+## 3         111                0                  0           0               0   
+## 4         118                0                  0           0               0   
+## 5         125                0                  0           0               0   
+## 6         132                0                  0           0               0   
+## 7         139                2.34               1.81        1.15            1.79
+## 8         146                7.56               7.89        3.62            2.4 
+## 9         154               28.8               15.0        17.9             6.21
+## # ... with 2 more variables: JaggerWheat &lt;dbl&gt;, JaggerWheat.Trt &lt;dbl&gt;</code></pre>
+<p>ข้อมูลตาราง 7 ตัวแปร Julian.Date คือ วันที่ของปี ซึ่งประเมินโรค 9 ครั้ง ทุก ๆ 7 วัน เริ่มตั้งแต่วันที่ 97 คือวันที่ 97 104 11 118 125 132 139 146 154 บันทึกใน คอลัมน์ต่อไปๆ คือ พันธ์ข้าวสาลต่าง ๆ และ ีที่ไม่ฉีดพ้น</p>
+<p>จากโครงสร้างข้อมูลนี้ ยังไม่พร้อมที่จะ นำมาวิเคราะห์ จึงต้องจัดโครงสร้างใหม่</p>
+<pre class="r"><code>tidy_rust &lt;- rust_dat %&gt;% pivot_longer(TwentyOneThirtySevenWheat:JaggerWheat.Trt, names_to = &quot;Treatment&quot;, values_to = &quot;Severity&quot;)
+paged_table(tidy_rust)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["Julian.Date"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["Treatment"],"name":[2],"type":["chr"],"align":["left"]},{"label":["Severity"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"97","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"97","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"97","2":"CutterWheat","3":"0.00"},{"1":"97","2":"CutterWheat.Trt","3":"0.00"},{"1":"97","2":"JaggerWheat","3":"0.00"},{"1":"97","2":"JaggerWheat.Trt","3":"0.00"},{"1":"104","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"104","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"104","2":"CutterWheat","3":"0.00"},{"1":"104","2":"CutterWheat.Trt","3":"0.00"},{"1":"104","2":"JaggerWheat","3":"0.00"},{"1":"104","2":"JaggerWheat.Trt","3":"0.00"},{"1":"111","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"111","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"111","2":"CutterWheat","3":"0.00"},{"1":"111","2":"CutterWheat.Trt","3":"0.00"},{"1":"111","2":"JaggerWheat","3":"0.00"},{"1":"111","2":"JaggerWheat.Trt","3":"0.00"},{"1":"118","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"118","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"118","2":"CutterWheat","3":"0.00"},{"1":"118","2":"CutterWheat.Trt","3":"0.00"},{"1":"118","2":"JaggerWheat","3":"0.00"},{"1":"118","2":"JaggerWheat.Trt","3":"0.00"},{"1":"125","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"125","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"125","2":"CutterWheat","3":"0.00"},{"1":"125","2":"CutterWheat.Trt","3":"0.00"},{"1":"125","2":"JaggerWheat","3":"0.00"},{"1":"125","2":"JaggerWheat.Trt","3":"0.00"},{"1":"132","2":"TwentyOneThirtySevenWheat","3":"0.00"},{"1":"132","2":"TwentyOneThirtySevenWheat.trt","3":"0.00"},{"1":"132","2":"CutterWheat","3":"0.00"},{"1":"132","2":"CutterWheat.Trt","3":"0.00"},{"1":"132","2":"JaggerWheat","3":"0.00"},{"1":"132","2":"JaggerWheat.Trt","3":"0.00"},{"1":"139","2":"TwentyOneThirtySevenWheat","3":"2.34"},{"1":"139","2":"TwentyOneThirtySevenWheat.trt","3":"1.81"},{"1":"139","2":"CutterWheat","3":"1.15"},{"1":"139","2":"CutterWheat.Trt","3":"1.79"},{"1":"139","2":"JaggerWheat","3":"1.85"},{"1":"139","2":"JaggerWheat.Trt","3":"2.27"},{"1":"146","2":"TwentyOneThirtySevenWheat","3":"7.56"},{"1":"146","2":"TwentyOneThirtySevenWheat.trt","3":"7.89"},{"1":"146","2":"CutterWheat","3":"3.62"},{"1":"146","2":"CutterWheat.Trt","3":"2.40"},{"1":"146","2":"JaggerWheat","3":"6.92"},{"1":"146","2":"JaggerWheat.Trt","3":"5.00"},{"1":"154","2":"TwentyOneThirtySevenWheat","3":"28.78"},{"1":"154","2":"TwentyOneThirtySevenWheat.trt","3":"15.04"},{"1":"154","2":"CutterWheat","3":"17.89"},{"1":"154","2":"CutterWheat.Trt","3":"6.21"},{"1":"154","2":"JaggerWheat","3":"47.39"},{"1":"154","2":"JaggerWheat.Trt","3":"20.17"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>โครงสร้างข้อมูลพร้อมวิเคราะห์ต่อแล้ว
+ต่อไป ดูกราฟ การพัฒนาของโรคเมื่อเวลาผ่านไปว่าแต่ละกรรมวิธีนั้น เป็นอย่างไรนั้น</p>
+<pre class="r"><code>tidy_rust %&gt;%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line() + labs(color = &quot;Treatment&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
+ถ้ามาดูกราฟ แยกกันในแต่ละพันธุ์ เปรียบเทียบระหว่าง ไม่พ้นสารเคมี กับพ่น</p>
+<pre class="r"><code>Cutter_p &lt;- tidy_rust %&gt;%
+  filter(str_detect(Treatment, &quot;Cutter&quot;)) %&gt;%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Jagger_p &lt;- tidy_rust %&gt;%
+  filter(str_detect(Treatment, &quot;Jagger&quot;)) %&gt;%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Twenty_p &lt;- tidy_rust %&gt;%
+  filter(str_detect(Treatment, &quot;Twenty&quot;)) %&gt;%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+
+Cutter_p + Jagger_p + Twenty_p</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+จะเห็นชัดเจนมากขึ้นว่า ถ้าฉีดพ้นแล้ว การพัฒนาของโรคพืชเมื่อเวลาผ่านไปลดลง</p>
+<pre class="r"><code>Var_p &lt;- tidy_rust %&gt;%
+  filter(!str_detect(Treatment, &quot;rt$&quot;)) %&gt;%
+  ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
+Var_p</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+ข้อมูลชุดนี้เอง ก็สามารถบ่งบอกว่าพันธุ์ใดมีความต้านทานต่อโรคราสนิมมากกว่ากัน จากกราฟ ก็พอจะบอกได้ว่า พันธุ์ Cutter นั้น ต้านทานโรคมากกว่าอีก 2 พันธุ์</p>
+<p>มาดูวิธีการวิเคราะห์หาค่า AUDPC กันด้วย <code>epifitter::AUDPC()</code> มันมีทริคนิดหน่วยครับ เพราะว่า function ถูกออกแบบมาให้คำนวน audpc ข้อมูลชุดใดชุดหนึ่ง ดังนั้นถ้า ชุดข้อมูลมีหลาย Treatment ก็จะต้อง คำนวน audpc แต่ละ Treament ซึ่ง อาสจจะต้อง subset ข้อมูลก่อนแล้วจึงจะ คำนวนหาค่า audpc ได้</p>
+<p>ซึ่งสำหรับข้อมูลจริง อาจจะต้องพึ่ง package <code>tidyr</code> และ <code>purrr</code> ดังตัวอย่างที่ทำให้ดู</p>
+<p>ืnested ข้อมูลส่วนที่เป็น Julian.Date และ Severity ด้วยการ <code>group_by</code> และ <code>nest</code></p>
+<pre class="r"><code>nst_rust &lt;- tidy_rust %&gt;% group_by(Treatment) %&gt;% nest()
+nst_rust</code></pre>
+<pre><code>## # A tibble: 6 x 2
+## # Groups:   Treatment [6]
+##   Treatment                     data            
+##   &lt;chr&gt;                         &lt;list&gt;          
+## 1 TwentyOneThirtySevenWheat     &lt;tibble [9 x 2]&gt;
+## 2 TwentyOneThirtySevenWheat.trt &lt;tibble [9 x 2]&gt;
+## 3 CutterWheat                   &lt;tibble [9 x 2]&gt;
+## 4 CutterWheat.Trt               &lt;tibble [9 x 2]&gt;
+## 5 JaggerWheat                   &lt;tibble [9 x 2]&gt;
+## 6 JaggerWheat.Trt               &lt;tibble [9 x 2]&gt;</code></pre>
+<p>ต่อจากนั้น <code>map_dbl</code> ต่อโดยรวบ function <code>AUDPC</code></p>
+<pre class="r"><code>rust_audpc &lt;- nst_rust %&gt;% mutate(audpc = map_dbl(data, ~AUDPC(time = .x$Julian.Date, y = .x$Severity)))</code></pre>
+<p>ได้ ค่า AUDPC ใน column ชื่อ audpc</p>
+<p>ลอง plot กราฟ ดู</p>
+<pre class="r"><code>rust_audpc %&gt;% ggplot(aes(x = Treatment, y = audpc)) + geom_col() + coord_flip()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-1.png" width="672" />
+ลองเอาไปฝึกกันดูนะ</p>
+</div>
+</div>
