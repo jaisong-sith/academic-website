@@ -52,10 +52,12 @@ paged_table(tidy_rust)
 โครงสร้างข้อมูลพร้อมวิเคราะห์ต่อแล้ว
 ต่อไป ดูกราฟ การพัฒนาของโรคเมื่อเวลาผ่านไปว่าแต่ละกรรมวิธีนั้น เป็นอย่างไรนั้น
 
+## ปรับโครงสร้างข้อมูล
 ```{r}
 tidy_rust %>%
   ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line() + labs(color = "Treatment")
 ```
+## กราฟ disease progress over time  
 ถ้ามาดูกราฟ แยกกันในแต่ละพันธุ์ เปรียบเทียบระหว่าง ไม่พ้นสารเคมี กับพ่น
 ```{r}
 Cutter_p <- tidy_rust %>%
@@ -70,7 +72,7 @@ Twenty_p <- tidy_rust %>%
   filter(str_detect(Treatment, "Twenty")) %>%
   ggplot(aes(x = Julian.Date, y = Severity, color = Treatment)) + geom_point() + geom_line()
 
-Cutter_p + Jagger_p + Twenty_p
+Cutter_p / Jagger_p / Twenty_p
 ```
 จะเห็นชัดเจนมากขึ้นว่า ถ้าฉีดพ้นแล้ว การพัฒนาของโรคพืชเมื่อเวลาผ่านไปลดลง
 
@@ -81,6 +83,8 @@ Var_p <- tidy_rust %>%
 Var_p
 ```
 ข้อมูลชุดนี้เอง ก็สามารถบ่งบอกว่าพันธุ์ใดมีความต้านทานต่อโรคราสนิมมากกว่ากัน จากกราฟ ก็พอจะบอกได้ว่า พันธุ์ Cutter นั้น ต้านทานโรคมากกว่าอีก 2 พันธุ์
+
+### คำนวน audpc 
 
 มาดูวิธีการวิเคราะห์หาค่า AUDPC กันด้วย `epifitter::AUDPC()` มันมีทริคนิดหน่วยครับ เพราะว่า function ถูกออกแบบมาให้คำนวน audpc ข้อมูลชุดใดชุดหนึ่ง ดังนั้นถ้า ชุดข้อมูลมีหลาย Treatment ก็จะต้อง คำนวน audpc แต่ละ Treament ซึ่ง อาสจจะต้อง subset ข้อมูลก่อนแล้วจึงจะ คำนวนหาค่า audpc ได้
 
