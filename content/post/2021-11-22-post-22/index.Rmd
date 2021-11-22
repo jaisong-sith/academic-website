@@ -1,0 +1,92 @@
+---
+title: "Linear Regression in plant disease"
+author: "Sith Jaisong"
+date: '2021-11-22'
+categories:
+- R
+- PDE
+tags:
+- Plant Disease
+- ggplot
+- PDE
+---
+
+# เกริ่น
+
+AUDPC ไม่ใช่วิธีการเดียวในการสรุปความก้าวหน้าของโรค มักใช้การวิเคราะห์การถดถอย การวิเคราะห์การถดถอยเป็นเครื่องมือทางสถิติสำหรับการอธิบายความสัมพันธ์ระหว่างตัวแปรเชิงปริมาณตั้งแต่สองตัวขึ้นไป โดยที่ตัวแปรหนึ่งตัว (ตัวแปรตามหรือตัวแปรตอบสนอง) อาจถูกทำนายจากตัวแปรอื่น (ตัวแปรอิสระหรือตัวแปรทำนาย) ตัวอย่างเช่น หากทราบความสัมพันธ์ระหว่างความรุนแรงของโรคกับเวลา ความรุนแรงของโรคสามารถคาดการณ์ได้ในเวลาที่กำหนด
+ถ้าเรามีตัวแปรทำนายเพียงตัวเดียวและการตอบสนองและตัวแปรทำนายมีความสัมพันธ์เชิงเส้น ข้อมูลสามารถวิเคราะห์ได้ด้วยแบบจำลองเชิงเส้นอย่างง่าย เมื่อมีตัวแปรทำนายมากกว่าหนึ่งตัว อาจใช้การถดถอยพหุคูณ เมื่อตัวแบบเชิงเส้นไม่เพียงพอที่จะอธิบายข้อมูล ตัวแบบการถดถอยแบบไม่เชิงเส้นอาจมีประโยชน์ ในส่วนนี้ ตัวอย่างของการถดถอยเชิงเส้นอย่างง่ายบางส่วนแสดงโดยใช้ R
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+
+
+```{r }
+disease <- tribble(
+  ~diseasev, ~temperature,
+  1.9, 2,
+  3.1, 1,
+  3.3, 5,
+  4.8, 5,
+  5.3, 20,
+  6.1, 20,
+  6.4, 23,
+  7.6, 10,
+  9.8, 30,
+  12.4, 25
+  )
+```
+
+# linear graph
+
+```{r}
+disease %>% ggplot(aes(x = temperature, y = diseasev)) +
+    geom_point() + 
+    geom_smooth(method=lm)
+```
+
+```{r}
+lm_mod <- lm(diseasev ~ temperature, data = disease)
+lm_mod
+```
+
+Coefficients:
+(Intercept)  temperature  
+     2.6623       0.2417
+     
+Thus, it is your job, when running linear regression to check for:
+
+Non-linearity
+Heteroscedasticity
+Outlier values
+Normality of residuals
+
+
+This generates four plots: 1) Residuals vs Fitted - checks linear relationship assumption of linear regression. A linear relationship will demonstrate a horizontal red line here. Deviations from a horizontal line suggest nonlinearity and that a different approach may be necessary.
+
+Normal Q-Q - checks whether or not the residuals (the difference between the observed and predicted values) from the model are normally distributed. The best fit models points fall along the dashed line on the plot. Deviation from this line suggests that a different analytical approach may be required.
+
+Scale-Location - checks the homoscedasticity of the model. A horizontal red line with points equally spread out indicates a well-fit model. A non-horizontal line or points that cluster together suggests that your data are not homoscedastic.
+
+Residuals vs Leverage - helps to identify outlier or extreme values that may disproportionately affect the model’s results. Their inclusion or exclusion from the analysis may affect the results of the analysis. Note that the top three most extreme values are identified with numbers next to the points in all four plots.
+
+https://jhudatascience.org/tidyversecourse/model.html#linear-modeling
+
+```{r}
+library(performance)
+```
+
+https://uc-r.github.io/linear_regression
+
+Is there a relationship between medical charges and other variables in the dataset?
+How valid is the model we have built?
+What can we do to improve the model?
+
+https://towardsdatascience.com/linear-regression-modeling-and-assumptions-dcd7a201502a
