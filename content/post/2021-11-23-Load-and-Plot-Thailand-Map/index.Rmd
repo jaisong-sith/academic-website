@@ -1,0 +1,106 @@
+---
+title: "Load and Plot Thailand Map"
+author: "Sith Jaisong"
+date: '2021-11-23'
+categories:
+- R
+- Map
+tags:
+- ggplot
+---
+
+# เกริ่น
+ด้วยความที่กำลังสนใจการ plot แผนที่ ของประเทศไทย และรู้ว่าสามารถ plot แผนที่ด้วยโปรแกรม R ได้ จึงอยากที่จะ บันทึกและแชร์โค้ดที่ตัวเองใช้ รวมถึงเทคนิค ต่าง ๆ ที่ได้ศึกษา จากแหล่งต่าง ๆ ในด้านที่ตัวเองสนใจ และ พยายามจะทำทุกอย่างให้จบด้แผนที่ด้วยโปรแกรม R โปรแกรมเดียว  
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+
+ก่อนเริ่มต้น สำหรับโปรแกรม R ของใครที่อ่านภาษาไทยไม่ได้ ขอให้ set ตาม code ข้างลางนี้
+
+```{r }
+# เพื่อให้ R สามารถอ่านภาษาไทยได้
+Sys.setlocale("LC_CTYPE", "Thai") # for Windows only
+options(encoding = "UTF-8") # Optional (for Windows)
+```
+
+# โหลด shape file แผนที่ของประเทศไทย
+1. มาจาก เวป [THAI GISNET](https://thaigis.net/2018/08/)
+
+```{r }
+website <- "https://data.humdata.org/dataset/d24bdc45-eb4c-4e3d-8b16-44db02667c27/resource/d0c722ff-6939-4423-ac0d-6501830b1759/download/tha_adm_rtsd_itos_20190221_shp_part_1.zip"
+```
+อันที่จริงเวปนี้มี shape file ของประเทศไทยให้หลากหลาย อาจจะลองไปเล่น ๆ ด้วยก็ได้นะครับ
+
+2. มาจาก Github ของผมเอง
+ผมได้รับขอจากอาจารย์ รศ. ดร. สุเพชร จิรขจรกุล จากช่อง [Youtube](https://www.youtube.com/channel/UChHZS7Ml3-T7hOgxblqW4zA) ของท่าน แล้วเพื่อไม่ให้หายไปจากคอมและ คนอื่น ๆ และรู้ว่าสามารถ นำไปใช้ประโยชน์ต่อได้ ผมจึงเอาลง Github ของตัวเอง
+
+```{r }
+website <- "https://github.com/jaisong-sith/data/raw/main/thprov.zip"
+```
+
+File ที่โหลดจะเป็น zip file แต่ ส่วนตัวผมไม่ชอบโหลดไฟล์เก็บไว้ใน local computer นะครับ และเพื่อให้ทุกคนสามารถทำตามผมได้
+
+```{r }
+temp <- tempfile() # สร้าง tempfile ซึ่งจะเป็น path ของไฟล์
+
+temp2 <- tempfile()
+```
+
+สร้างมา 2 path ไว้
+
+```{r }
+download.file(website , temp) # waiting for download cause large files
+
+# โหลดจาก website เรากำหนด ไปเก็บไว้ที่ temp
+# keep it in temp in computer
+# unzip the contents in 'temp' and save unzipped content in 'temp2'
+
+unzip(zipfile = temp, exdir = temp2)
+
+# then unzip file in temp2
+# look at temp2 what is inside
+```
+
+ตอนนี้ file ที่เราโหลดและunzip มาแล้ว จะไปอยู่ใน temp2 มาดูกันว่าแตกแล้วเป็มาดูกันว่าแตกแล้วเป็นไง
+
+```{r}
+list.files(temp2)
+```
+เห็นได้ว่า unzip มาแล้ว ได้ thprov ซึ่งเป็นโฟลเดอร์ ก็จะไม่เห็นไฟล์ .shp เพราะว่า zip ได้ โฟลเดอร์ เราต้องเข้าไปดูข้างใน โฟลเดอร์นี้
+แล้วเราจะไปหาได้ที่ไหน
+
+```{r}
+paste0(temp2,"\\", list.files(temp2))
+```
+นี้คือที่อยู่ของโฟลเดอร์เรา unzip มาได้
+
+```{r}
+my_SHP_file <- paste0(temp2,"\\", list.files(temp2)) %>%
+  list.files(., pattern = ".shp$", full.names = TRUE)
+```
+เราก็จะได้ที่อยู่ของไฟล์ ที่ สกุล .shp จาก argument `pattern = ".shp$"`
+
+
+ต่อมาเรามาอ่าน shp ไฟล์ ที่จริงสามารถอ่านได้หลาย function แต่ ผมเลือกอ่าน
+```{r}
+library(sf)
+th_shp <- sf::read_sf(my_SHP_file)
+```
+
+เท่านี้เราก็สามารถอ่านไฟล์ shp และพร้อมที่จะใช้แล้ว
+
+# plot with ggplot2 ####
+ข้อมูลของเราตอนนี้สามารถ plot ได้ด้วย ggplot ได้เลย โดยใช้ function `geom_sf()`
+
+```{r}
+library(ggplot2)
+ggplot(th_shp) +  geom_sf()
+```

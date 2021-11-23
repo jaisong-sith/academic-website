@@ -1,0 +1,89 @@
+---
+title: "Load and Plot Thailand Map"
+author: "Sith Jaisong"
+date: '2021-11-23'
+categories:
+- R
+- Map
+tags:
+- ggplot
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="เกรน" class="section level1">
+<h1>เกริ่น</h1>
+<p>ด้วยความที่กำลังสนใจการ plot แผนที่ ของประเทศไทย และรู้ว่าสามารถ plot แผนที่ด้วยโปรแกรม R ได้ จึงอยากที่จะ บันทึกและแชร์โค้ดที่ตัวเองใช้ รวมถึงเทคนิค ต่าง ๆ ที่ได้ศึกษา จากแหล่งต่าง ๆ ในด้านที่ตัวเองสนใจ และ พยายามจะทำทุกอย่างให้จบด้แผนที่ด้วยโปรแกรม R โปรแกรมเดียว</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.0     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)</code></pre>
+<p>ก่อนเริ่มต้น สำหรับโปรแกรม R ของใครที่อ่านภาษาไทยไม่ได้ ขอให้ set ตาม code ข้างลางนี้</p>
+<pre class="r"><code># เพื่อให้ R สามารถอ่านภาษาไทยได้
+Sys.setlocale(&quot;LC_CTYPE&quot;, &quot;Thai&quot;) # for Windows only</code></pre>
+<pre><code>## [1] &quot;Thai_Thailand.874&quot;</code></pre>
+<pre class="r"><code>options(encoding = &quot;UTF-8&quot;) # Optional (for Windows)</code></pre>
+</div>
+<div id="โหลด-shape-file-แผนทของประเทศไทย" class="section level1">
+<h1>โหลด shape file แผนที่ของประเทศไทย</h1>
+<ol style="list-style-type: decimal">
+<li>มาจาก เวป <a href="https://thaigis.net/2018/08/">THAI GISNET</a></li>
+</ol>
+<pre class="r"><code>website &lt;- &quot;https://data.humdata.org/dataset/d24bdc45-eb4c-4e3d-8b16-44db02667c27/resource/d0c722ff-6939-4423-ac0d-6501830b1759/download/tha_adm_rtsd_itos_20190221_shp_part_1.zip&quot;</code></pre>
+<p>อันที่จริงเวปนี้มี shape file ของประเทศไทยให้หลากหลาย อาจจะลองไปเล่น ๆ ด้วยก็ได้นะครับ</p>
+<ol start="2" style="list-style-type: decimal">
+<li>มาจาก Github ของผมเอง
+ผมได้รับขอจากอาจารย์ รศ. ดร. สุเพชร จิรขจรกุล จากช่อง <a href="https://www.youtube.com/channel/UChHZS7Ml3-T7hOgxblqW4zA">Youtube</a> ของท่าน แล้วเพื่อไม่ให้หายไปจากคอมและ คนอื่น ๆ และรู้ว่าสามารถ นำไปใช้ประโยชน์ต่อได้ ผมจึงเอาลง Github ของตัวเอง</li>
+</ol>
+<pre class="r"><code>website &lt;- &quot;https://github.com/jaisong-sith/data/raw/main/thprov.zip&quot;</code></pre>
+<p>File ที่โหลดจะเป็น zip file แต่ ส่วนตัวผมไม่ชอบโหลดไฟล์เก็บไว้ใน local computer นะครับ และเพื่อให้ทุกคนสามารถทำตามผมได้</p>
+<pre class="r"><code>temp &lt;- tempfile() # สร้าง tempfile ซึ่งจะเป็น path ของไฟล์
+
+temp2 &lt;- tempfile()</code></pre>
+<p>สร้างมา 2 path ไว้</p>
+<pre class="r"><code>download.file(website , temp) # waiting for download cause large files
+
+# โหลดจาก website เรากำหนด ไปเก็บไว้ที่ temp
+# keep it in temp in computer
+# unzip the contents in &#39;temp&#39; and save unzipped content in &#39;temp2&#39;
+
+unzip(zipfile = temp, exdir = temp2)
+
+# then unzip file in temp2
+# look at temp2 what is inside</code></pre>
+<p>ตอนนี้ file ที่เราโหลดและunzip มาแล้ว จะไปอยู่ใน temp2 มาดูกันว่าแตกแล้วเป็มาดูกันว่าแตกแล้วเป็นไง</p>
+<pre class="r"><code>list.files(temp2)</code></pre>
+<pre><code>## [1] &quot;thprov&quot;</code></pre>
+<p>เห็นได้ว่า unzip มาแล้ว ได้ thprov ซึ่งเป็นโฟลเดอร์ ก็จะไม่เห็นไฟล์ .shp เพราะว่า zip ได้ โฟลเดอร์ เราต้องเข้าไปดูข้างใน โฟลเดอร์นี้
+แล้วเราจะไปหาได้ที่ไหน</p>
+<pre class="r"><code>paste0(temp2,&quot;\\&quot;, list.files(temp2))</code></pre>
+<pre><code>## [1] &quot;C:\\Users\\sithj\\AppData\\Local\\Temp\\Rtmpesu1Ei\\file17283dbd41d4\\thprov&quot;</code></pre>
+<p>นี้คือที่อยู่ของโฟลเดอร์เรา unzip มาได้</p>
+<pre class="r"><code>my_SHP_file &lt;- paste0(temp2,&quot;\\&quot;, list.files(temp2)) %&gt;%
+  list.files(., pattern = &quot;.shp$&quot;, full.names = TRUE)</code></pre>
+<p>เราก็จะได้ที่อยู่ของไฟล์ ที่ สกุล .shp จาก argument <code>pattern = ".shp$"</code></p>
+<p>ต่อมาเรามาอ่าน shp ไฟล์ ที่จริงสามารถอ่านได้หลาย function แต่ ผมเลือกอ่าน</p>
+<pre class="r"><code>library(sf)
+th_shp &lt;- sf::read_sf(my_SHP_file)</code></pre>
+<p>เท่านี้เราก็สามารถอ่านไฟล์ shp และพร้อมที่จะใช้แล้ว</p>
+</div>
+<div id="plot-with-ggplot2" class="section level1">
+<h1>plot with ggplot2</h1>
+<p>ข้อมูลของเราตอนนี้สามารถ plot ได้ด้วย ggplot ได้เลย โดยใช้ function <code>geom_sf()</code></p>
+<pre class="r"><code>library(ggplot2)
+ggplot(th_shp) +  geom_sf()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+</div>
