@@ -1,16 +1,14 @@
 ---
-title: "Load and Plot Thailand Map"
+title: "Load Data From web"
 author: "Sith Jaisong"
 date: '2021-11-23'
 categories:
 - R
-- Map
 tags:
-- ggplot
+- R
 ---
 # เกริ่น
-ข้อมูล open data ของไทยด้านการเกษตร สามารถเข้าเวปของ[ศูนย์ข้อมูลเกษตรแห่งชาติ](https://www.nabc.go.th/) อยากเชิญชวนให้ลองเข้าไปใช้ หรือ ทดลองเล่นกับข้อมูล ซึ่งเราสามารถเอาข้อมูลมาเล่น
-
+ข้อมูลต่าง ๆ บางที เราสามารถดึงจากเวปต่าง ๆ ได้ ซึ่งอาจจะมีกา่รเผยแพร่สาธารณะให้สามารถนำดึงมาใช้ประโยชน์ได้ โดยเฉพาะ open data ของไทยด้านการเกษตร สามารถเข้าเวปของ[ศูนย์ข้อมูลเกษตรแห่งชาติ](https://www.nabc.go.th/) อยากเชิญชวนให้ลองเข้าไปใช้ หรือ ทดลองเล่นกับข้อมูล ซึ่งเราสามารถเอาข้อมูลมาเล่น
 
 ```{r}
 library(tidyverse)
@@ -23,76 +21,49 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(digits = 3)
 ```
 
-# ตัวอย่างการดึงข้อมูลไฟล์ xlsx file จากเวป
-
-ข้อมูลปริมาณการผลิตข้าว ปี 2564
-[ข้อมูลปริมาณการผลิตข้าว ปี 2564](http://dataset.nabc.go.th/dataset/oae11_04)
+# ตัวอย่างการดึงข้อมูลไฟล์ xlsx หรือ xls file จากเวป
+ลองดึงข้อมูล [ข้อมูลปริมาณการผลิตข้าว ปี 2564](http://dataset.nabc.go.th/dataset/oae11_04)
 
 ```{r}
 library(rio)
 #Right now readxl reads only from xlsx and xls files
 
-url <- "http://dataset.nabc.go.th/dataset/a6d73394-bcaf-4609-9510-6af1e4c27446/resource/575bd8e3-9059-4d40-8493-f7297e4530c0/download/11-04.xlsx"
+xlsx_url <- "http://dataset.nabc.go.th/dataset/a6d73394-bcaf-4609-9510-6af1e4c27446/resource/575bd8e3-9059-4d40-8493-f7297e4530c0/download/11-04.xlsx"
 
-rice_2564 <- rio::import(file = url)
-head(rice_2564)
+rice_2564 <- rio::import(file = xlsx_url)
+glimpse(rice_2564)
 ```
 จะเห็นว่าโครงสร้างของข้อมูลอาจจะยังไม่พร้อมที่จะนำไปใช้วิเคราะห์ได้ทันที เราจึงต้องมาทำการ Data Wrangling เสียก่อน
 
+# ตัวอย่างการดึงข้อมูลไฟล์ csv file
+ลองดึงข้อมูล [ราคาที่เกษตรกรขายได้ที่ไร่นา](http://dataset.nabc.go.th/dataset/oae0010/resource/9599c763-8188-4d1d-a736-31c8dd4962d7)
 
-# ตัวอย่างการดึงข้อมูลไฟล์ pdf file จากเวป
+```{r}
+library(readr)
 
+csv_url <- "http://dataset.nabc.go.th/dataset/60bb81c6-0012-4875-9e33-beae43f36dab/resource/9599c763-8188-4d1d-a736-31c8dd4962d7/download/dzqns1561119274.csv"
+
+commo_price <- readr::read_csv(file = csv_url, col_types = "ccddd")
+glimpse(commo_price)
+```
+
+# ตัวอย่างการดึงข้อมูลไฟล์ตารางจาก wiki
+
+ให้ดูตัวอย่างการดึงตารางจาก [List of districts of Thailand](https://en.wikipedia.org/wiki/List_of_districts_of_Thailand)
+
+```{r}
+### load table from wiki ####
+library(rvest)
+
+doc <- read_html("https://en.wikipedia.org/wiki/List_of_districts_of_Thailand")
+
+table <- html_node(doc, ".wikitable")
+
+my.table <- html_table(table, fill = TRUE)
+```
+
+# ตัวอย่างการดึงข้อมูลไฟล์ JSON จากเวป
 to be continue
 
-```{r}
-# load library
-library(sf)
-```
-
-```{r }
-website <- "https://github.com/jaisong-sith/data/raw/main/thprov.zip"
-temp <- tempfile()
-temp2 <- tempfile()
-download.file(website , temp)
-unzip(zipfile = temp, exdir = temp2)
-th_shp <- paste0(temp2,"\\", list.files(temp2)) %>%
-  list.files(., pattern = ".shp$", full.names = TRUE) %>%
-sf::read_sf()
-```
-
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-
-ขั้นตอนการโหลด shp file มา ดูย้อนได้ที่ [load and plot thailand map](https://sithjaisong.netlify.app/post/2021-11-23-load-and-plot-thailand-map/)
+# ตัวอย่างการดึงข้อมูลไฟล์ api จากเวป
+to be continue

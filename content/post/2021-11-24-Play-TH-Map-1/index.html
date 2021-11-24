@@ -1,12 +1,11 @@
 ---
-title: "Load and Plot Thailand Map"
+title: "Load Data From web"
 author: "Sith Jaisong"
 date: '2021-11-23'
 categories:
 - R
-- Map
 tags:
-- ggplot
+- R
 ---
 
 <script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
@@ -14,7 +13,7 @@ tags:
 
 <div id="เกรน" class="section level1">
 <h1>เกริ่น</h1>
-<p>ข้อมูล open data ของไทยด้านการเกษตร สามารถเข้าเวปของ<a href="https://www.nabc.go.th/">ศูนย์ข้อมูลเกษตรแห่งชาติ</a> อยากเชิญชวนให้ลองเข้าไปใช้ หรือ ทดลองเล่นกับข้อมูล ซึ่งเราสามารถเอาข้อมูลมาเล่น</p>
+<p>ข้อมูลต่าง ๆ บางที เราสามารถดึงจากเวปต่าง ๆ ได้ ซึ่งอาจจะมีกา่รเผยแพร่สาธารณะให้สามารถนำดึงมาใช้ประโยชน์ได้ โดยเฉพาะ open data ของไทยด้านการเกษตร สามารถเข้าเวปของ<a href="https://www.nabc.go.th/">ศูนย์ข้อมูลเกษตรแห่งชาติ</a> อยากเชิญชวนให้ลองเข้าไปใช้ หรือ ทดลองเล่นกับข้อมูล ซึ่งเราสามารถเอาข้อมูลมาเล่น</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
 <pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
@@ -32,68 +31,61 @@ theme_set(theme_few())
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(digits = 3)</code></pre>
 </div>
-<div id="ขอมลปรมาณการผลตขาว-ป-2564" class="section level1">
-<h1>ข้อมูลปริมาณการผลิตข้าว ปี 2564</h1>
-<p><a href="http://dataset.nabc.go.th/dataset/oae11_04">ข้อมูลปริมาณการผลิตข้าว ปี 2564</a></p>
+<div id="ตวอยางการดงขอมลไฟล-xlsx-หรอ-xls-file-จากเวป" class="section level1">
+<h1>ตัวอย่างการดึงข้อมูลไฟล์ xlsx หรือ xls file จากเวป</h1>
+<p>ลองดึงข้อมูล <a href="http://dataset.nabc.go.th/dataset/oae11_04">ข้อมูลปริมาณการผลิตข้าว ปี 2564</a></p>
 <pre class="r"><code>library(rio)
 #Right now readxl reads only from xlsx and xls files
 
-url &lt;- &quot;http://dataset.nabc.go.th/dataset/a6d73394-bcaf-4609-9510-6af1e4c27446/resource/575bd8e3-9059-4d40-8493-f7297e4530c0/download/11-04.xlsx&quot;
+xlsx_url &lt;- &quot;http://dataset.nabc.go.th/dataset/a6d73394-bcaf-4609-9510-6af1e4c27446/resource/575bd8e3-9059-4d40-8493-f7297e4530c0/download/11-04.xlsx&quot;
 
-rice_2564 &lt;- rio::import(file = url)
-head(rice_2564)</code></pre>
-<pre><code>##   &lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E1B&gt;&lt;U+0E35&gt;: &lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E1E&gt;&lt;U+0E22&gt;&lt;U+0E32&gt;&lt;U+0E01&gt;&lt;U+0E23&gt;&lt;U+0E13&gt;&lt;U+0E4C&gt;&lt;U+0E01&gt;&lt;U+0E32&gt;&lt;U+0E23&gt;&lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E34&gt;&lt;U+0E15&gt; &lt;U+0E1B&gt;&lt;U+0E35&gt; 2564 (&lt;U+0E1B&gt;&lt;U+0E35&gt;&lt;U+0E40&gt;&lt;U+0E1E&gt;&lt;U+0E32&gt;&lt;U+0E30&gt;&lt;U+0E1B&gt;&lt;U+0E25&gt;&lt;U+0E39&gt;&lt;U+0E01&gt; 2564/65) &lt;U+0E23&gt;&lt;U+0E32&gt;&lt;U+0E22&gt;&lt;U+0E08&gt;&lt;U+0E31&gt;&lt;U+0E07&gt;&lt;U+0E2B&gt;&lt;U+0E27&gt;&lt;U+0E31&gt;&lt;U+0E14&gt; &lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E2D&gt;&lt;U+0E2D&gt;&lt;U+0E21&gt;&lt;U+0E39&gt;&lt;U+0E25&gt; &lt;U+0E13&gt; &lt;U+0E40&gt;&lt;U+0E14&gt;&lt;U+0E37&gt;&lt;U+0E2D&gt;&lt;U+0E19&gt;&lt;U+0E21&gt;&lt;U+0E34&gt;&lt;U+0E16&gt;&lt;U+0E38&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E22&gt;&lt;U+0E19&gt; 2564
-## 1                                                                                                                                                                                                                                                                                                                                                                                                                                                   &lt;U+0E1B&gt;&lt;U+0E23&gt;&lt;U+0E30&gt;&lt;U+0E40&gt;&lt;U+0E17&gt;&lt;U+0E28&gt;/&lt;U+0E20&gt;&lt;U+0E32&gt;&lt;U+0E04&gt;/&lt;U+0E08&gt;&lt;U+0E31&gt;&lt;U+0E07&gt;&lt;U+0E2B&gt;&lt;U+0E27&gt;&lt;U+0E31&gt;&lt;U+0E14&gt;
-## 2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 &lt;NA&gt;
-## 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                             &lt;U+0E23&gt;&lt;U+0E27&gt;&lt;U+0E21&gt;&lt;U+0E17&gt;&lt;U+0E31&gt;&lt;U+0E49&gt;&lt;U+0E07&gt;&lt;U+0E1B&gt;&lt;U+0E23&gt;&lt;U+0E30&gt;&lt;U+0E40&gt;&lt;U+0E17&gt;&lt;U+0E28&gt;
-## 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     &lt;U+0E20&gt;&lt;U+0E32&gt;&lt;U+0E04&gt;&lt;U+0E40&gt;&lt;U+0E2B&gt;&lt;U+0E19&gt;&lt;U+0E37&gt;&lt;U+0E2D&gt;
-## 5                                                                                                                                                                                                                                                                                                                                                                                                             &lt;U+0E20&gt;&lt;U+0E32&gt;&lt;U+0E04&gt;&lt;U+0E15&gt;&lt;U+0E30&gt;&lt;U+0E27&gt;&lt;U+0E31&gt;&lt;U+0E19&gt;&lt;U+0E2D&gt;&lt;U+0E2D&gt;&lt;U+0E01&gt;&lt;U+0E40&gt;&lt;U+0E09&gt;&lt;U+0E35&gt;&lt;U+0E22&gt;&lt;U+0E07&gt;&lt;U+0E40&gt;&lt;U+0E2B&gt;&lt;U+0E19&gt;&lt;U+0E37&gt;&lt;U+0E2D&gt;
-## 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             &lt;U+0E20&gt;&lt;U+0E32&gt;&lt;U+0E04&gt;&lt;U+0E01&gt;&lt;U+0E25&gt;&lt;U+0E32&gt;&lt;U+0E07&gt;
-##                                                                                                                               ...2
-## 1 &lt;U+0E40&gt;&lt;U+0E19&gt;&lt;U+0E37&gt;&lt;U+0E49&gt;&lt;U+0E2D&gt;&lt;U+0E17&gt;&lt;U+0E35&gt;&lt;U+0E48&gt;&lt;U+0E40&gt;&lt;U+0E1E&gt;&lt;U+0E32&gt;&lt;U+0E30&gt;&lt;U+0E1B&gt;&lt;U+0E25&gt;&lt;U+0E39&gt;&lt;U+0E01&gt;
-## 2                                                                                                       (&lt;U+0E44&gt;&lt;U+0E23&gt;&lt;U+0E48&gt;)
-## 3                                                                                                                         61956600
-## 4                                                                                                                         14442016
-## 5                                                                                                                         38118153
-## 6                                                                                                                          8585235
-##                                                                                                                                               ...3
-## 1 &lt;U+0E40&gt;&lt;U+0E19&gt;&lt;U+0E37&gt;&lt;U+0E49&gt;&lt;U+0E2D&gt;&lt;U+0E17&gt;&lt;U+0E35&gt;&lt;U+0E48&gt;&lt;U+0E40&gt;&lt;U+0E01&gt;&lt;U+0E47&gt;&lt;U+0E1A&gt;&lt;U+0E40&gt;&lt;U+0E01&gt;&lt;U+0E35&gt;&lt;U+0E48&gt;&lt;U+0E22&gt;&lt;U+0E27&gt;
-## 2                                                                                                                       (&lt;U+0E44&gt;&lt;U+0E23&gt;&lt;U+0E48&gt;)
-## 3                                                                                                                                         58760783
-## 4                                                                                                                                         14016297
-## 5                                                                                                                                         35523372
-## 6                                                                                                                                          8426120
-##                                               ...4
-## 1 &lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E34&gt;&lt;U+0E15&gt;
-## 2                       (&lt;U+0E15&gt;&lt;U+0E31&gt;&lt;U+0E19&gt;)
-## 3                                         26029366
-## 4                                          7893150
-## 5                                         12668024
-## 6                                          5083032
-##                                                                                                                   ...5
-## 1 &lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E34&gt;&lt;U+0E15&gt;&lt;U+0E15&gt;&lt;U+0E48&gt;&lt;U+0E2D&gt;&lt;U+0E44&gt;&lt;U+0E23&gt;&lt;U+0E48&gt; (&lt;U+0E01&gt;&lt;U+0E01&gt;.)
-## 2                                                                                     &lt;U+0E1B&gt;&lt;U+0E25&gt;&lt;U+0E39&gt;&lt;U+0E01&gt;
-## 3                                                                                                                  420
-## 4                                                                                                                  547
-## 5                                                                                                                  332
-## 6                                                                                                                  592
-##                               ...6         ...7
-## 1                             &lt;NA&gt;         &lt;NA&gt;
-## 2 &lt;U+0E40&gt;&lt;U+0E01&gt;&lt;U+0E47&gt;&lt;U+0E1A&gt; Up: 25-06-64
-## 3                              443         &lt;NA&gt;
-## 4                              563         &lt;NA&gt;
-## 5                              357         &lt;NA&gt;
-## 6                              603         &lt;NA&gt;</code></pre>
+rice_2564 &lt;- rio::import(file = xlsx_url)
+glimpse(rice_2564)</code></pre>
+<pre><code>## Rows: 85
+## Columns: 7
+## $ `&lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E1B&gt;&lt;U+0E35&gt;: &lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E1E&gt;&lt;U+0E22&gt;&lt;U+0E32&gt;&lt;U+0E01&gt;&lt;U+0E23&gt;&lt;U+0E13&gt;&lt;U+0E4C&gt;&lt;U+0E01&gt;&lt;U+0E32&gt;&lt;U+0E23&gt;&lt;U+0E1C&gt;&lt;U+0E25&gt;&lt;U+0E34&gt;&lt;U+0E15&gt; &lt;U+0E1B&gt;&lt;U+0E35&gt; 2564 (&lt;U+0E1B&gt;&lt;U+0E35&gt;&lt;U+0E40&gt;&lt;U+0E1E&gt;&lt;U+0E32&gt;&lt;U+0E30&gt;&lt;U+0E1B&gt;&lt;U+0E25&gt;&lt;U+0E39&gt;&lt;U+0E01&gt; 2564/65) &lt;U+0E23&gt;&lt;U+0E32&gt;&lt;U+0E22&gt;&lt;U+0E08&gt;&lt;U+0E31&gt;&lt;U+0E07&gt;&lt;U+0E2B&gt;&lt;U+0E27&gt;&lt;U+0E31&gt;&lt;U+0E14&gt; &lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E2D&gt;&lt;U+0E2D&gt;&lt;U+0E21&gt;&lt;U+0E39&gt;&lt;U+0E25&gt; &lt;U+0E13&gt; &lt;U+0E40&gt;&lt;U+0E14&gt;&lt;U+0E37&gt;&lt;U+0E2D&gt;&lt;U+0E19&gt;&lt;U+0E21&gt;&lt;U+0E34&gt;&lt;U+0E16&gt;&lt;U+0E38&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E22&gt;&lt;U+0E19&gt; 2564` &lt;chr&gt; ~
+## $ ...2                                                                                &lt;chr&gt; ~
+## $ ...3                                                                                &lt;chr&gt; ~
+## $ ...4                                                                                &lt;chr&gt; ~
+## $ ...5                                                                                &lt;chr&gt; ~
+## $ ...6                                                                                &lt;chr&gt; ~
+## $ ...7                                                                                &lt;chr&gt; ~</code></pre>
 <p>จะเห็นว่าโครงสร้างของข้อมูลอาจจะยังไม่พร้อมที่จะนำไปใช้วิเคราะห์ได้ทันที เราจึงต้องมาทำการ Data Wrangling เสียก่อน</p>
-<pre class="r"><code># load library
-library(sf)</code></pre>
-<pre class="r"><code>website &lt;- &quot;https://github.com/jaisong-sith/data/raw/main/thprov.zip&quot;
-temp &lt;- tempfile()
-temp2 &lt;- tempfile()
-download.file(website , temp)
-unzip(zipfile = temp, exdir = temp2)
-th_shp &lt;- paste0(temp2,&quot;\\&quot;, list.files(temp2)) %&gt;%
-  list.files(., pattern = &quot;.shp$&quot;, full.names = TRUE) %&gt;%
-sf::read_sf()</code></pre>
-<p>ขั้นตอนการโหลด shp file มา ดูย้อนได้ที่ <a href="https://sithjaisong.netlify.app/post/2021-11-23-load-and-plot-thailand-map/">load and plot thailand map</a></p>
+</div>
+<div id="ตวอยางการดงขอมลไฟล-csv-file" class="section level1">
+<h1>ตัวอย่างการดึงข้อมูลไฟล์ csv file</h1>
+<p>ลองดึงข้อมูล <a href="http://dataset.nabc.go.th/dataset/oae0010/resource/9599c763-8188-4d1d-a736-31c8dd4962d7">ราคาที่เกษตรกรขายได้ที่ไร่นา</a></p>
+<pre class="r"><code>library(readr)
+
+csv_url &lt;- &quot;http://dataset.nabc.go.th/dataset/60bb81c6-0012-4875-9e33-beae43f36dab/resource/9599c763-8188-4d1d-a736-31c8dd4962d7/download/dzqns1561119274.csv&quot;
+
+commo_price &lt;- readr::read_csv(file = csv_url, col_types = &quot;ccddd&quot;)
+glimpse(commo_price)</code></pre>
+<pre><code>## Rows: 1,979
+## Columns: 5
+## $ PROD_TYPE &lt;chr&gt; &quot;&lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&lt;U+0E40&gt;&lt;U+0E1B&gt;&lt;U+0E25&gt;&lt;U+0E37&gt;&lt;U+0E2D&gt;&lt;U+0E01&gt;&lt;U+0E40&gt;&lt;U+0E08&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E2B&gt;&lt;U+0E2D&gt;&lt;U+0E21&gt;&lt;U+0E21&gt;&lt;U+0E30&gt;&lt;U+0E25&gt;&lt;U+0E34&gt;&quot;, &quot;&lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&lt;U+0E40&gt;&lt;U+0E2B&gt;&lt;U+0E19&gt;&lt;U+0E35&gt;&lt;U+0E22&gt;&lt;U+0E27&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E1B&gt;&lt;U+0E35&gt;&lt;U+0E22&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&quot;, &quot;&lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;&lt;U+0E40&gt;&lt;U+0E2B&gt;&lt;U+0E19&gt;&lt;U+0E35&gt;&lt;U+0E22&gt;&lt;U+0E27&gt;&lt;U+0E19&gt;&lt;U+0E32&gt;&lt;U+0E1B&gt;&lt;U+0E35&gt;&lt;U+0E2A&gt;&lt;U+0E31&gt;&lt;U+0E49&gt;&lt;U+0E19&gt;&quot;, &quot;&lt;U+0E02&gt;&lt;U+0E49&gt;&lt;U+0E32&gt;&lt;U+0E27&gt;~
+## $ YEAR      &lt;chr&gt; &quot;2561&quot;, &quot;2561&quot;, &quot;2561&quot;, &quot;2561&quot;, &quot;2561&quot;, &quot;2561&quot;, &quot;2561&quot;, &quot;256~
+## $ MONTH_C   &lt;dbl&gt; 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, ~
+## $ WEEK_C    &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+## $ PRICE     &lt;dbl&gt; 15191.80, 8882.79, 8436.20, 7768.14, 6553.47, 6.10, 7.95, 2.~</code></pre>
+</div>
+<div id="ตวอยางการดงขอมลไฟลตารางจาก-wiki" class="section level1">
+<h1>ตัวอย่างการดึงข้อมูลไฟล์ตารางจาก wiki</h1>
+<p>ให้ดูตัวอย่างการดึงตารางจาก <a href="https://en.wikipedia.org/wiki/List_of_districts_of_Thailand">List of districts of Thailand</a></p>
+<pre class="r"><code>### load table from wiki ####
+library(rvest)
+
+doc &lt;- read_html(&quot;https://en.wikipedia.org/wiki/List_of_districts_of_Thailand&quot;)
+
+table &lt;- html_node(doc, &quot;.wikitable&quot;)
+
+my.table &lt;- html_table(table, fill = TRUE)</code></pre>
+</div>
+<div id="ตวอยางการดงขอมลไฟล-json-จากเวป" class="section level1">
+<h1>ตัวอย่างการดึงข้อมูลไฟล์ JSON จากเวป</h1>
+<p>to be continue</p>
+</div>
+<div id="ตวอยางการดงขอมลไฟล-api-จากเวป" class="section level1">
+<h1>ตัวอย่างการดึงข้อมูลไฟล์ api จากเวป</h1>
+<p>to be continue</p>
 </div>
