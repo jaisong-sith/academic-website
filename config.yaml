@@ -1,5 +1,6 @@
 theme: "hugo-PaperMod"
 baseURL: https://sithjaisong.netlify.app/
+paginate: 5
 languageCode: en-us
 title: Into R and SJ
 

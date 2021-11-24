@@ -1,0 +1,98 @@
+---
+title: "Load and Plot Thailand Map"
+author: "Sith Jaisong"
+date: '2021-11-23'
+categories:
+- R
+- Map
+tags:
+- ggplot
+---
+# เกริ่น
+ข้อมูล open data ของไทยด้านการเกษตร สามารถเข้าเวปของ[ศูนย์ข้อมูลเกษตรแห่งชาติ](https://www.nabc.go.th/) อยากเชิญชวนให้ลองเข้าไปใช้ หรือ ทดลองเล่นกับข้อมูล ซึ่งเราสามารถเอาข้อมูลมาเล่น
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+
+# ตัวอย่างการดึงข้อมูลไฟล์ xlsx file จากเวป
+
+ข้อมูลปริมาณการผลิตข้าว ปี 2564
+[ข้อมูลปริมาณการผลิตข้าว ปี 2564](http://dataset.nabc.go.th/dataset/oae11_04)
+
+```{r}
+library(rio)
+#Right now readxl reads only from xlsx and xls files
+
+url <- "http://dataset.nabc.go.th/dataset/a6d73394-bcaf-4609-9510-6af1e4c27446/resource/575bd8e3-9059-4d40-8493-f7297e4530c0/download/11-04.xlsx"
+
+rice_2564 <- rio::import(file = url)
+head(rice_2564)
+```
+จะเห็นว่าโครงสร้างของข้อมูลอาจจะยังไม่พร้อมที่จะนำไปใช้วิเคราะห์ได้ทันที เราจึงต้องมาทำการ Data Wrangling เสียก่อน
+
+
+# ตัวอย่างการดึงข้อมูลไฟล์ pdf file จากเวป
+
+to be continue
+
+```{r}
+# load library
+library(sf)
+```
+
+```{r }
+website <- "https://github.com/jaisong-sith/data/raw/main/thprov.zip"
+temp <- tempfile()
+temp2 <- tempfile()
+download.file(website , temp)
+unzip(zipfile = temp, exdir = temp2)
+th_shp <- paste0(temp2,"\\", list.files(temp2)) %>%
+  list.files(., pattern = ".shp$", full.names = TRUE) %>%
+sf::read_sf()
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+ขั้นตอนการโหลด shp file มา ดูย้อนได้ที่ [load and plot thailand map](https://sithjaisong.netlify.app/post/2021-11-23-load-and-plot-thailand-map/)

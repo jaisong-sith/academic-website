@@ -21,12 +21,12 @@ tags:
 โดยที่ตัวแปรหนึ่งตัว (ตัวแปรตามหรือตัวแปรตอบสนอง) อาจถูกทำนายจากตัวแปรอื่น (ตัวแปรอิสระหรือตัวแปรทำนาย) ตัวอย่างเช่น หากทราบความสัมพันธ์ระหว่างความรุนแรงของโรคกับเวลา ความรุนแรงของโรคสามารถคาดการณ์ได้ในเวลาที่กำหนด</p>
 <p>ถ้าเรามีตัวแปรทำนายเพียงตัวเดียวและการตอบสนองและตัวแปรตามมีความสัมพันธ์เชิงเส้น ข้อมูลก็สามารถวิเคราะห์ได้ด้วยแบบจำลองหรือสมการเชิงเส้นได้ หรือถ้าเมื่อมีตัวแปรทำนายมากกว่าหนึ่งตัว อาจใช้การถดถอยพหุคูณ ในส่วนนี้จะเสนอตัวอย่างของการวิเคราะห์ถดถอยเชิงเส้นโดย R</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
-<pre><code>## ✓ ggplot2 3.3.5     ✓ purrr   0.3.4
-## ✓ tibble  3.1.6     ✓ dplyr   1.0.7
-## ✓ tidyr   1.1.4     ✓ stringr 1.4.0
-## ✓ readr   2.1.0     ✓ forcats 0.5.1</code></pre>
-<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.0     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>library(knitr)
@@ -53,7 +53,7 @@ options(digits = 3)</code></pre>
   12.4, 25
   )
 disease</code></pre>
-<pre><code>## # A tibble: 10 × 2
+<pre><code>## # A tibble: 10 x 2
 ##    diseasev temperature
 ##       &lt;dbl&gt;       &lt;dbl&gt;
 ##  1      1.9           2
