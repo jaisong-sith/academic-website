@@ -1,0 +1,184 @@
+---
+title: "epifitter for Plant Disease Curve Model"
+author: "Sith Jaisong"
+date: '2021-11-26'
+categories:
+- R
+- PDE
+tags:
+- R
+- PDE
+---
+# เกริ่น
+การศึกษาด้านการระบาดวิทยาโรคพืช มักจะศึกษากันด้านแบบจำลอง และถือว่าเป็นเรื่องที่ค่อนข้างจะยาก ที่จะทำความเข้าใจ แต่การศึกษาแบบจำลองหรือโมเดลนั้น เพื่อพยายามหาอะไรบางอย่างมาเพื่ออธิบายปรากฎการณ์ทางธรรมชาติ และเมื่อลองคิดดูแล้ว การหาแบบจำลองมาอธิบาย ดูแล้วน่าจะอธิบายได้ ดี อีกทั้งแบบจำลองที่ได้ นอกจากจะอธิบายสิ่งที่เกิดขึ้นกับข้อมูลในอดีตหรือข้อมูลที่เก็บได้ หรือ ทดลองได้ ยังสามารถนำแบบจำลองเหล่านั้น มาคาดการณ์ เหตุการณ์การระบาดที่ถ้าจะเกิดขึ้นในอนาคตได้ จึงเห็นได้ว่า การศึกษาแบบจำลองการระบาด จึงอาจจะเป็นหัวใจของการศึกษาการระบาด ตั้งแต่อดีตจนถึงปัจจุบัน
+
+ในด้านโรคพืชวิทยา เรามักสนใจที่จะศึกษาการพัฒนาของโรคเมื่อเวลาผ่านไป โดยที่เวลา (t) ถูกจำลองเป็นตัวแปรต่อเนื่องมากกว่าที่จะเป็นตัวแปรที่ไม่ต่อเนื่อง แบบจำลองจำนวนมากถูกนำมาใช้เพื่อสร้างแบบจำลองการพัฒนาของโรคเมื่อเวลาผ่านไป จะแสดงให้ดู มี ดังนี้
+
+สมการแบบจำลองการเกิดโรคสามารถ ดูได้จาก [Examples of growth models for plant disease progress](https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/GrowthModels.aspx)
+
+![](C:\Users\sithj\Documents\Github\academic-website\content\post\2021-11-24-Play-TH-Map-2\DPC_model.png)
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(cowplot)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+
+```{r}
+library(epifitter)
+set.seed(2564)
+```
+
+เราจะใช้ functions `The sim_` จาก package `epifitter` เพื่อ จำลองข้อมูลจากโมเดลแบบต่าง เพื่อมาศึกษา โดยมี 6 ค่าที่เราจะลองปรับ ดู
+The sim_ functions, regardless of the model, require the same set of six arguments. By default, at least two arguments are required (the others have default values)
+
+ - `r`: อัตราการเกิดโรค (apparent infection rate)
+ - `n`: จำนวนซ้ำ (number of replicates)
+
+เมื่อ `n` มีค่ามากกว่า 1  When n is greater than one, replicated epidemics (e.g. replicated treatments) are produced and a level of noise (experimental error) should be set in the alpha argument. These two arguments combined set will generate random_y values, which will vary randomly across the defined number of replicates.
+
+The other arguments are:
+
+ - `N`: เวลาทั้งหมดตลอดช่วงเวลาการระบาด (epidemic duration in time units)
+ - `dt`: ระยะช่วงเวลาระหว่างการประเมินความรุนแรงของโรค (time (fixed) in units between two assessments)
+ - `y0`: การระบาดเริ่มต้น (initial inoculum)
+ - `alpha`: ค่าความแกว่งของข้อมูลระหว่างซ้ำ (noise parameters for the replicates)
+
+
+# Monomolecular model
+
+Monomolecular model สมมติความสามารถในการรองรับของหนึ่ง นั่นคือ ระดับสูงสุดของการเกิดโรคคือ 1 ดังนั้น วัดความรุนแรงหรืออุบัติการณ์ของโรคเป็นสัดส่วนของโรค อยู่ระหว่าง 0 (ไม่เป็นโรค) และ 1 (เป็นโรคทั้งหมด) นอกจากนี้ อัตราการเปลี่ยนแปลงสัมบูรณ์เป็นสัดส่วนกับ เนื้อเยื่อที่มีสุขภาพดี เช่น (1-y)
+
+```{r}
+mono_model <- sim_monomolecular(
+  N = 100,
+  y0 = 0.01,
+  dt = 5,
+  r = 0.05,
+  alpha = 0.2,
+  n = 7
+)
+head(mono_model)
+```
+
+```{r}
+mono_plot = mono_model %>%
+  ggplot(aes(time, y)) +
+  geom_jitter(aes(time, random_y), size = 3, color = "gray", width = .1) +
+  geom_line(size = 1) +
+  theme_minimal_hgrid() +
+  labs(
+    title = "Monomolecular",
+    y = "Disease intensity",
+    x = "Time"
+  )
+mono_plot
+```
+
+# Exponential model
+
+แบบจำลองเลขชี้กำลังถือว่าอัตราสัมบูรณ์ของโรคเพิ่มขึ้น (*dy/dt*) เป็นสัดส่วนกับความรุนแรงของโรค
+```{r}
+exp_model <- sim_exponential(
+  N = 100,    # total time units
+  y0 = 0.01,  # initial inoculum
+  dt = 10,    #  interval between assessments in time units
+  r = 0.045,  #  apparent infection rate
+  alpha = 0.2,# level of noise
+  n = 7       # number of replicates
+)
+head(exp_model)
+```
+
+```{r}
+exp_plot = exp_model %>%
+  ggplot(aes(time, y)) +
+  geom_jitter(aes(time, random_y),
+              size = 3,
+              color = "gray",
+              width = .1) +
+  geom_line(size = 1) +
+  theme_minimal_hgrid() +
+  ylim(0, 1) +
+  labs(title = "Exponential",
+       y = "Disease intensity",
+       x = "Time")
+exp_plot
+```
+
+# Logistic model
+
+Logistic model ถือว่าอัตราแน่นอนของการเปลี่ยนแปลงในระดับโรคขึ้นอยู่กับทั้งเนื้อเยื่อที่มีสุขภาพดี (y) และเนื้อเยื่อที่เป็นโรค (1-y) ที่มีอยู่ในขณะนั้น เส้นโค้งมีความสมมาตรอย่างสมบูรณ์โดยมีจุดเปลี่ยนเว้าที่ t = 1/rln y0/(1- y0) เมื่อ y = 1/2 นั่นคือ dy/dt เพิ่มขึ้นจนถึง y = 1/2 และลดลงหลังจากนั้น
+
+```{r}
+logist_model <- sim_logistic(
+  N = 100,
+  y0 = 0.01,
+  dt = 5,
+  r = 0.1,
+  alpha = 0.2,
+  n = 7
+)
+head(logist_model)
+```
+
+```{r}
+logist_plot = logist_model %>%
+  ggplot(aes(time, y)) +
+  geom_jitter(aes(time, random_y), size = 3,color = "gray", width = .1) +
+  geom_line(size = 1) +
+  theme_minimal_hgrid() +
+  labs(
+    title = "Logistic",
+    y = "Disease intensity",
+    x = "Time"
+  )
+logist_plot
+```
+
+
+# Gompertz model
+
+โมเดล Gompertz ถือว่าอัตราการเปลี่ยนแปลงแบบสัมบูรณ์ขึ้นอยู่กับ y และ ln(1/y) และคล้ายกับแบบจำลองด้านลอจิสติกส์มาก อย่างไรก็ตาม โมเดล Gompertz มีความสมมาตรมากกว่า โดยมีจุดเปลี่ยนเว้าอยู่ที่ 0.37(1/e) แทน
+
+```{r}
+gomp_model <- sim_gompertz(
+  N = 100,
+  y0 = 0.01,
+  dt = 5,
+  r = 0.07,
+  alpha = 0.2,
+  n = 7
+)
+head(gomp_model)
+```
+
+```{r}
+gomp_plot = gomp_model %>%
+  ggplot(aes(time, y)) +
+  geom_jitter(aes(time, random_y), size = 3,color = "gray", width = .1) +
+  geom_line(size = 1) +
+  theme_minimal_hgrid() +
+  labs(
+    title = "Gompertz",
+    y = "Disease intensity",
+    x = "Time"
+  )
+gomp_plot
+```
+
+```{r}
+(exp_plot + mono_plot)/(logist_plot + gomp_plot)
+```
+
+การที่จะพิจารณาว่า model บทความต่อไป จะลงในรายละเอียดเรื่องการประเมินว่าแบบจำลองไหนเหมาะสมกับข้อมูลของเรามากที่สุด
+
+
+สามารถดู [reference](https://alvesks.github.io/epifitter/articles/simulation.html)
