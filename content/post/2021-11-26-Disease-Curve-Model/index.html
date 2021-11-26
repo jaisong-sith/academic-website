@@ -18,7 +18,7 @@ tags:
 <p>การศึกษาด้านการระบาดวิทยาโรคพืช มักจะศึกษากันด้านแบบจำลอง และถือว่าเป็นเรื่องที่ค่อนข้างจะยาก ที่จะทำความเข้าใจ แต่การศึกษาแบบจำลองหรือโมเดลนั้น เพื่อพยายามหาอะไรบางอย่างมาเพื่ออธิบายปรากฎการณ์ทางธรรมชาติ และเมื่อลองคิดดูแล้ว การหาแบบจำลองมาอธิบาย ดูแล้วน่าจะอธิบายได้ ดี อีกทั้งแบบจำลองที่ได้ นอกจากจะอธิบายสิ่งที่เกิดขึ้นกับข้อมูลในอดีตหรือข้อมูลที่เก็บได้ หรือ ทดลองได้ ยังสามารถนำแบบจำลองเหล่านั้น มาคาดการณ์ เหตุการณ์การระบาดที่ถ้าจะเกิดขึ้นในอนาคตได้ จึงเห็นได้ว่า การศึกษาแบบจำลองการระบาด จึงอาจจะเป็นหัวใจของการศึกษาการระบาด ตั้งแต่อดีตจนถึงปัจจุบัน</p>
 <p>ในด้านโรคพืชวิทยา เรามักสนใจที่จะศึกษาการพัฒนาของโรคเมื่อเวลาผ่านไป โดยที่เวลา (t) ถูกจำลองเป็นตัวแปรต่อเนื่องมากกว่าที่จะเป็นตัวแปรที่ไม่ต่อเนื่อง แบบจำลองจำนวนมากถูกนำมาใช้เพื่อสร้างแบบจำลองการพัฒนาของโรคเมื่อเวลาผ่านไป จะแสดงให้ดู มี ดังนี้</p>
 <p>สมการแบบจำลองการเกิดโรคสามารถ ดูได้จาก <a href="https://www.apsnet.org/edcenter/disimpactmngmnt/topc/EcologyAndEpidemiologyInR/DiseaseProgress/Pages/GrowthModels.aspx">Examples of growth models for plant disease progress</a></p>
-<p><img src="DPC_model.png" /></p>
+<p><img src="C:\Users\sithj\Documents\Github\academic-website\content\post\2021-11-24-Play-TH-Map-2\DPC_model.png" /></p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
 <pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
@@ -44,22 +44,20 @@ library(cowplot)</code></pre>
 <pre class="r"><code>theme_set(theme_few())
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(digits = 3)</code></pre>
+<p>เปิดใช้ package <code>epifitter</code></p>
 <pre class="r"><code>library(epifitter)
 set.seed(2564)</code></pre>
-<p>เราจะใช้ functions <code>The sim_</code> จาก package <code>epifitter</code> เพื่อ จำลองข้อมูลจากโมเดลแบบต่าง เพื่อมาศึกษา โดยมี 6 ค่าที่เราจะลองปรับ ดู
+<p>เราจะใช้ functions <code>sim_</code> จาก package <code>epifitter</code> เพื่อ จำลองข้อมูลจากโมเดลแบบต่าง เพื่อมาศึกษา โดยมี 6 ค่าที่เราจะลองปรับ ดู
 The sim_ functions, regardless of the model, require the same set of six arguments. By default, at least two arguments are required (the others have default values)</p>
 <ul>
 <li><code>r</code>: อัตราการเกิดโรค (apparent infection rate)</li>
 <li><code>n</code>: จำนวนซ้ำ (number of replicates)</li>
-</ul>
-<p>เมื่อ <code>n</code> มีค่ามากกว่า 1 When n is greater than one, replicated epidemics (e.g. replicated treatments) are produced and a level of noise (experimental error) should be set in the alpha argument. These two arguments combined set will generate random_y values, which will vary randomly across the defined number of replicates.</p>
-<p>The other arguments are:</p>
-<ul>
 <li><code>N</code>: เวลาทั้งหมดตลอดช่วงเวลาการระบาด (epidemic duration in time units)</li>
 <li><code>dt</code>: ระยะช่วงเวลาระหว่างการประเมินความรุนแรงของโรค (time (fixed) in units between two assessments)</li>
 <li><code>y0</code>: การระบาดเริ่มต้น (initial inoculum)</li>
 <li><code>alpha</code>: ค่าความแกว่งของข้อมูลระหว่างซ้ำ (noise parameters for the replicates)</li>
 </ul>
+<p>เมื่อ <code>n</code> มีค่ามากกว่า 1 โรคระบาดที่เกิดซ้ำ (เช่น การรักษาซ้ำ) จะเกิดขึ้น และ ควรมีการตั้งค่า <code>alpha</code> การแกว่งของข้อมูล (ความคลาดเคลื่อนฝนการประเมินของการทดลอง) กำหนดค่าแล้ว คำนวนออกมาให้ ค่า random_y ซึ่งจะแปรผันแบบสุ่มตามจำนวนซ้ำที่กำหนดไว้</p>
 </div>
 <div id="monomolecular-model" class="section level1">
 <h1>Monomolecular model</h1>

@@ -31,26 +31,26 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(digits = 3)
 ```
 
+
+
+เปิดใช้ package `epifitter`
+
 ```{r}
 library(epifitter)
 set.seed(2564)
 ```
 
-เราจะใช้ functions `The sim_` จาก package `epifitter` เพื่อ จำลองข้อมูลจากโมเดลแบบต่าง เพื่อมาศึกษา โดยมี 6 ค่าที่เราจะลองปรับ ดู
+เราจะใช้ functions `sim_` จาก package `epifitter` เพื่อ จำลองข้อมูลจากโมเดลแบบต่าง เพื่อมาศึกษา โดยมี 6 ค่าที่เราจะลองปรับ ดู
 The sim_ functions, regardless of the model, require the same set of six arguments. By default, at least two arguments are required (the others have default values)
 
  - `r`: อัตราการเกิดโรค (apparent infection rate)
  - `n`: จำนวนซ้ำ (number of replicates)
-
-เมื่อ `n` มีค่ามากกว่า 1  When n is greater than one, replicated epidemics (e.g. replicated treatments) are produced and a level of noise (experimental error) should be set in the alpha argument. These two arguments combined set will generate random_y values, which will vary randomly across the defined number of replicates.
-
-The other arguments are:
-
  - `N`: เวลาทั้งหมดตลอดช่วงเวลาการระบาด (epidemic duration in time units)
  - `dt`: ระยะช่วงเวลาระหว่างการประเมินความรุนแรงของโรค (time (fixed) in units between two assessments)
  - `y0`: การระบาดเริ่มต้น (initial inoculum)
  - `alpha`: ค่าความแกว่งของข้อมูลระหว่างซ้ำ (noise parameters for the replicates)
 
+ เมื่อ `n` มีค่ามากกว่า 1 โรคระบาดที่เกิดซ้ำ (เช่น การรักษาซ้ำ) จะเกิดขึ้น และ ควรมีการตั้งค่า `alpha` การแกว่งของข้อมูล (ความคลาดเคลื่อนฝนการประเมินของการทดลอง) กำหนดค่าแล้ว คำนวนออกมาให้ ค่า random_y ซึ่งจะแปรผันแบบสุ่มตามจำนวนซ้ำที่กำหนดไว้
 
 # Monomolecular model
 
