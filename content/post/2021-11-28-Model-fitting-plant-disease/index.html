@@ -1,0 +1,261 @@
+---
+title: "Model fitting for Plant Disease"
+author: "Sith Jaisong"
+date: '2021-11-28'
+categories:
+- R
+- PDE
+tags:
+- R
+- PDE
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+<link href="{{< blogdown/postref >}}index_files/pagedtable/css/pagedtable.css" rel="stylesheet" />
+<script src="{{< blogdown/postref >}}index_files/pagedtable/js/pagedtable.js"></script>
+
+
+<div id="เกรน" class="section level1">
+<h1>เกริ่น</h1>
+<p>ได้เล่าไปหลาย function แล้วของ package epifitter ตังแต่ AUDPC() เพื่อวัดพื้นที่ใจ้กราฟการเพิ่มขึ้นของการระบาดเมื่อเวลาผ่านไป และ sim_() เพื่อไว้จำลองโมเดลต่าง ๆ เพื่อ ศึกษารูปแบบการเพิ่มขึ้นขึ้นของโรค
+แต่การศึกษาด้านนี้ ยังไม่จบ เพราะว่า การที่เรามี ข้อมูลจริงแล้ว ขั้นต่อไป เรามาดูว่า ข้อมูลการระบาดที่ประเมินได้ มีรูปแบบใด หรือว่า มีแบบจำลองการระบาดออกมาเป็ฯโมเดลไหนกัน จึงทำ Model fitting</p>
+<p><img src="https://media.springernature.com/full/springer-static/image/art%3A10.1186%2Fs42483-021-00098-7/MediaObjects/42483_2021_98_Fig1_HTML.png?as=webp" /></p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.0     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(cowplot)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggthemes&#39;:
+## 
+##     theme_map</code></pre>
+<pre><code>## The following object is masked from &#39;package:patchwork&#39;:
+## 
+##     align_plots</code></pre>
+<pre class="r"><code>theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)</code></pre>
+</div>
+<div id="model-fitting" class="section level1">
+<h1>Model fitting</h1>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>เปรียบเทียบการระบาดของโรคไวรัสในพริก การประเมินการเกิดโรค disease incidence ในช่วงเวลา 7 วันจนถึง 49 วัน ข้อมูลมีอยู่ในบทที่ 4 (หน้า 93) ของหนังสือชื่อ <a href="https://apsjournals.apsnet.org/doi/10.1094/9780890545058.004">The studies of plant disease epidemics</a> ป้อนข้อมูลเองและสร้างเป็น dataframe คอลัมน์แรกเป็นเวลาประเมิน และคอลัมน์อื่นๆ การจัดการโรคด้วยวิธีต่าง ๆ</p>
+<pre class="r"><code>pepper &lt;-
+  tibble::tribble(
+    ~time, ~trt1, ~trt2, ~trt3,
+    0, 0.08, 0.001, 0.001,
+    7, 0.13, 0.01, 0.001,
+    14, 0.78, 0.09, 0.01,
+    21, 0.92, 0.25, 0.05,
+    28, 0.99, 0.8, 0.18,
+    35, 0.995, 0.98, 0.34,
+    42, 0.999, 0.99, 0.48,
+    49, 0.999, 0.999, 0.74
+  )
+paged_table(pepper)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["time"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["trt1"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["trt2"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["trt3"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"0","2":"0.080","3":"0.001","4":"0.001"},{"1":"7","2":"0.130","3":"0.010","4":"0.001"},{"1":"14","2":"0.780","3":"0.090","4":"0.010"},{"1":"21","2":"0.920","3":"0.250","4":"0.050"},{"1":"28","2":"0.990","3":"0.800","4":"0.180"},{"1":"35","2":"0.995","3":"0.980","4":"0.340"},{"1":"42","2":"0.999","3":"0.990","4":"0.480"},{"1":"49","2":"0.999","3":"0.999","4":"0.740"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="กราฟ" class="section level2">
+<h2>กราฟ</h2>
+<p>เพราะว่าข้อมูลยังต้องมีการจัดโครงส้รางใหม่ ก่อน สร้างกราฟ ggplot</p>
+<pre class="r"><code>pepper %&gt;%
+  pivot_longer(2:4, names_to = &quot;treat&quot;, values_to = &quot;inc&quot;) %&gt;%
+  ggplot(aes(time, inc,
+              linetype = treat,
+              shape = treat,
+              group = treat))+
+  geom_point(size =2)+
+  geom_line()+
+  annotate(geom = &quot;text&quot;, x = 15, y = 0.84, label = &quot;1&quot;)+
+  annotate(geom = &quot;text&quot;, x = 23, y = 0.6, label = &quot;2&quot;)+
+  annotate(geom = &quot;text&quot;, x = 32, y = 0.33, label = &quot;3&quot;)+
+  labs(y = &quot;Disease incidence (y)&quot;,
+       x = &quot;Time (days)&quot;)+
+  theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>ส่วนใหญ่แล้ว กราฟ ออกเป็นเส้นโค้ง logistic (sigmoid curve) ยกเว้น 3 ที่ ดูคล้าย exponential ซึ่งยังไม่ถึงจุดสูงสุด อาจจะประมาณว่าการระบาดยังไม่สมบูรณ์ ตรงนี้ิ สามารถดัด logistic and Gompertz Model ไปได้ เพื่อที่จะสามารถดักสินใจว่า แบบจำลองแบบไหนเหมาะกับชุดข้อมูลนนี้ เราจึงต้องทำ model fitting และประเมินทางสถิติต่อไป</p>
+</div>
+<div id="model-fitting-1" class="section level2">
+<h2>Model fitting</h2>
+<p>ในบรรดาfunction ต่าง ๆ ที่มีให้เลือกใน epifitter จะเริ่มต้นด้วย ตัวเลือกที่ง่ายที่สุด ซึ่งพอดีกับแบบจำลองของโรคระบาด หนึ่ง ๆ โดยใช้วิธีการถดถอยเชิงเส้น สำหรับสิ่งนี้ fit_lin() ซึ่ง ต้องการ: เวลา (t) และความรุนแรงของโรคหรือการเกิดโรค (y)</p>
+<p>เนื่องจากเรามีข้อมูลการโรคระบาดของ 3 การจัดการ จึงต้อง run fit_lin() สามครั้ง ผลจากการประเมินแบบจำลอง มาดูที่ Stats ของแต่ละ epi1 ถึง epi3</p>
+<div id="trt1-model-fitting" class="section level3">
+<h3>trt1 model fitting</h3>
+<pre class="r"><code>library(epifitter)
+
+epi1 &lt;- fit_lin(time = pepper$time,  
+  y = pepper$trt1 )
+epi1$Stats</code></pre>
+<pre><code>##                 CCC r_squared   RSE
+## Gompertz      0.985     0.970 0.591
+## Monomolecular 0.984     0.968 0.543
+## Logistic      0.978     0.957 0.824
+## Exponential   0.784     0.645 0.670</code></pre>
+</div>
+<div id="trt2-model-fitting" class="section level3">
+<h3>trt2 model fitting</h3>
+<pre class="r"><code>epi2 &lt;- fit_lin(time = pepper$time,  
+  y = pepper$trt2 )
+epi2$Stats</code></pre>
+<pre><code>##                 CCC r_squared   RSE
+## Logistic      0.996     0.992 0.452
+## Gompertz      0.971     0.943 0.841
+## Monomolecular 0.925     0.860 1.068
+## Exponential   0.897     0.813 1.202</code></pre>
+</div>
+<div id="trt3-model-fitting" class="section level3">
+<h3>trt3 model fitting</h3>
+<pre class="r"><code>epi3 &lt;- fit_lin(time = pepper$time,  
+  y = pepper$trt3 )
+epi3$Stats</code></pre>
+<pre><code>##                 CCC r_squared   RSE
+## Logistic      0.983     0.967 0.605
+## Gompertz      0.983     0.966 0.226
+## Exponential   0.964     0.930 0.771
+## Monomolecular 0.859     0.753 0.253</code></pre>
+<p>จากตรงนี้ จะพบว่าที่เราเดาไว้แรก ๆ นั้น ใกล้เคียง ว่า น่าจะเป็น logistic หรือ Gompertz ซึ่ง ก็ไม่ค่อยแตกต่างกันเ้ท่าไหร่นัก แต่กการที่จะตัดสินใจว่าแบบจำลองไหนดี ควรดูกราฟกับค่าที่สังเกตได้ กับ ค่าที่พยากรณ์ได้</p>
+</div>
+<div id="multiple-model-fitting" class="section level3">
+<h3>Multiple model fitting</h3>
+<p>จะใช้ fit_multi() ซึ่ง จะต้องทำเป็น long format dataframe ก่อน ดังนั้น จะต้องเรียงข้อมูลใหม่จากเดิม</p>
+<pre class="r"><code>pepper2 &lt;- pepper %&gt;%
+  pivot_longer(2:4, names_to =&quot;treat&quot;, values_to = &quot;inc&quot;)
+pepper2</code></pre>
+<pre><code>## # A tibble: 24 x 3
+##     time treat   inc
+##    &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;
+##  1     0 trt1  0.08 
+##  2     0 trt2  0.001
+##  3     0 trt3  0.001
+##  4     7 trt1  0.13 
+##  5     7 trt2  0.01 
+##  6     7 trt3  0.001
+##  7    14 trt1  0.78 
+##  8    14 trt2  0.09 
+##  9    14 trt3  0.01 
+## 10    21 trt1  0.92 
+## # ... with 14 more rows</code></pre>
+<p>fit_multi() ระบะ time_col คอลัมน์ไหนคือเวลา intensity_colคอลัมน์ไหนคือค่าประเมินโรค และ strata_cols คือ คอลัมน์ไหนเป็น treatment</p>
+<pre class="r"><code>epi_all &lt;- fit_multi(
+  data = pepper2,
+  time_col = &quot;time&quot;,
+  intensity_col = &quot;inc&quot;,
+  strata_cols = &quot;treat&quot;,
+  nlin = FALSE
+)</code></pre>
+<p>epifitter จะจัดอันดับแบบจำลองตาม CCC (ยิ่งสูงยิ่งดี) แต่สิ่งสำคัญคือต้องตรวจสอบ RSE ด้วย ยิ่งต่ำยิ่งดี ในความเป็นจริง RSE มีความสำคัญมากกว่าเมื่อจุดประสงค์ของเราคือการทำนาย</p>
+<div id="statistical-check" class="section level4">
+<h4>statistical check</h4>
+<pre class="r"><code>epi_all$Parameters %&gt;%
+  select(treat, model, best_model, RSE, CCC)</code></pre>
+<pre><code>##    treat         model best_model   RSE   CCC
+## 1   trt1      Gompertz          1 0.591 0.985
+## 2   trt1 Monomolecular          2 0.543 0.984
+## 3   trt1      Logistic          3 0.824 0.978
+## 4   trt1   Exponential          4 0.671 0.784
+## 5   trt2      Logistic          1 0.452 0.996
+## 6   trt2      Gompertz          2 0.841 0.971
+## 7   trt2 Monomolecular          3 1.068 0.925
+## 8   trt2   Exponential          4 1.202 0.897
+## 9   trt3      Logistic          1 0.605 0.983
+## 10  trt3      Gompertz          2 0.226 0.982
+## 11  trt3   Exponential          3 0.771 0.964
+## 12  trt3 Monomolecular          4 0.253 0.859</code></pre>
+<p>เราจะเลือก แบบจำลอง logistic และ Gompertz มาเปรียบเทียบกันดู</p>
+<pre class="r"><code>epi_all$Data %&gt;% head() %&gt;% paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["treat"],"name":[1],"type":["chr"],"align":["left"]},{"label":["time"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["y"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["model"],"name":[4],"type":["chr"],"align":["left"]},{"label":["linearized"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["predicted"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["residual"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"trt1","2":"0","3":"0.08","4":"Exponential","5":"-2.5257","6":"0.1638","7":"-0.0838","_rn_":"1"},{"1":"trt1","2":"0","3":"0.08","4":"Monomolecular","5":"0.0834","6":"-0.5881","7":"0.6681","_rn_":"2"},{"1":"trt1","2":"0","3":"0.08","4":"Logistic","5":"-2.4423","6":"0.0935","7":"-0.0135","_rn_":"3"},{"1":"trt1","2":"0","3":"0.08","4":"Gompertz","5":"-0.9265","6":"0.0355","7":"0.0445","_rn_":"4"},{"1":"trt1","2":"7","3":"0.13","4":"Exponential","5":"-2.0402","6":"0.2305","7":"-0.1005","_rn_":"5"},{"1":"trt1","2":"7","3":"0.13","4":"Monomolecular","5":"0.1393","6":"0.4878","7":"-0.3578","_rn_":"6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>จาก Data ของทำ model fitting นั้น จะมีค่าต่าง ๆ เพื่อให้มันใจต่อไปว่า ระหว่าง logistic หรือ Gompertz จะต้อง มาพล้อตกราฟว่า กราฟที่พยากรณ์ได้จากmodel กับค่าจริง มีความใกล้เคียงกันแค่ไหน</p>
+</div>
+<div id="graph-check" class="section level4">
+<h4>graph check</h4>
+<pre class="r"><code>epi_all$Data %&gt;%
+ filter(model %in% c(&quot;Gompertz&quot;, &quot;Logistic&quot;)) %&gt;%
+  ggplot(aes(time, predicted, shape = treat)) +
+  geom_point(aes(time, y)) +
+  geom_line() +
+  facet_wrap(~ model) +
+ coord_cartesian(ylim = c(0, 1)) + # set the max to 0.6
+  labs(
+    y = &quot;Disease incidence&quot;,
+    x = &quot;Time (days after emergence)&quot;
+  )</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+</div>
+<div id="error-check" class="section level4">
+<h4>error check</h4>
+<p>ต่อมาดูความคลาดเคลื่อนกันบ้างว่า model ที่เกิดควาดเคลื่อน ตลอดช่ในช่วงเวลา</p>
+<pre class="r"><code>epi_all$Data %&gt;%
+ filter(model %in% c(&quot;Gompertz&quot;, &quot;Logistic&quot;)) %&gt;%
+  ggplot(aes(time, predicted -y, shape = treat)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype =2)+
+  facet_wrap(~ model) +
+ coord_cartesian(ylim = c(-0.4, 0.4)) + # set the max to 0.6
+  labs(
+    y = &quot;Prediction error&quot;,
+    x = &quot;Time (days after emergence)&quot;
+  )</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>จะเห็นว่า logistic มีความคลาดเคลื่อนน้อยกว่า Gompertz</p>
+<p>เจาะลึกลงดูว่า treatment ไหนกันที่มีประสิทธิช่วยลดการระบาดของโรคได้ดี ซึ่งโดยทั่วไป เราจะวัดกันที่ค่า <em>r</em> (dy/dt) ถ้าค่า r น้อยกว่านั้นแสดงให้เห็นว่าโรคมีการพัฒนาช้ากว่า</p>
+<pre class="r"><code>epi_all$Parameters %&gt;%
+  filter(model == &quot;Logistic&quot;) %&gt;%
+  select(treat, y0, y0_ci_lwr, y0_ci_upr, r, r_ci_lwr, r_ci_upr
+)</code></pre>
+<pre><code>##   treat       y0 y0_ci_lwr y0_ci_upr     r r_ci_lwr r_ci_upr
+## 1  trt1 0.093504  0.027321   0.27473 0.210    0.166    0.255
+## 2  trt2 0.001373  0.000672   0.00280 0.278    0.254    0.303
+## 3  trt3 0.000813  0.000313   0.00211 0.175    0.143    0.208</code></pre>
+<p>สามารถ พล้อต ค่าเฉลี่ยของอัตราการเกิดโรค และ ที่ระดับ 95% confidence interval</p>
+<pre class="r"><code>p1 &lt;- epi_all$Parameters %&gt;%
+  filter(model == &quot;Logistic&quot;) %&gt;%
+  ggplot(aes(treat, r)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = r_ci_lwr, ymax = r_ci_upr),
+    width = 0,
+    size = 1
+  ) +
+  labs(
+    x = &quot;Time&quot;,
+    y = &quot;r&quot;
+  )
+p2 &lt;- epi_all$Parameters %&gt;%
+  filter(model == &quot;Logistic&quot;) %&gt;%
+  ggplot(aes(treat, 1 - exp(-y0))) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = y0_ci_lwr, ymax = y0_ci_upr),
+    width = 0,
+    size = 1
+  ) +
+  labs(
+    x = &quot;Time&quot;,
+    y = &quot;y0&quot;
+  )
+
+p1 | p2</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-14-1.png" width="672" />
+จากตรงนี้ เราก็จะทราบว่าโมเดลอะไรที่เหมาะสมกับข้อมูลของเรา และ ค่า Parametersที่นำไปประกอบ model เช่น r และ y0</p>
+</div>
+</div>
+</div>
+</div>

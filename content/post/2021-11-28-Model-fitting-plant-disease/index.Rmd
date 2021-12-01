@@ -1,0 +1,214 @@
+---
+title: "Model fitting for Plant Disease"
+author: "Sith Jaisong"
+date: '2021-11-28'
+categories:
+- R
+- PDE
+tags:
+- R
+- PDE
+---
+# เกริ่น
+ได้เล่าไปหลาย function แล้วของ package epifitter ตังแต่ AUDPC() เพื่อวัดพื้นที่ใจ้กราฟการเพิ่มขึ้นของการระบาดเมื่อเวลาผ่านไป และ sim_() เพื่อไว้จำลองโมเดลต่าง ๆ เพื่อ ศึกษารูปแบบการเพิ่มขึ้นขึ้นของโรค
+แต่การศึกษาด้านนี้ ยังไม่จบ เพราะว่า การที่เรามี ข้อมูลจริงแล้ว ขั้นต่อไป เรามาดูว่า ข้อมูลการระบาดที่ประเมินได้ มีรูปแบบใด หรือว่า มีแบบจำลองการระบาดออกมาเป็ฯโมเดลไหนกัน จึงทำ Model fitting
+
+![](https://media.springernature.com/full/springer-static/image/art%3A10.1186%2Fs42483-021-00098-7/MediaObjects/42483_2021_98_Fig1_HTML.png?as=webp)
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(cowplot)
+theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)
+```
+# Model fitting
+
+## Data
+เปรียบเทียบการระบาดของโรคไวรัสในพริก การประเมินการเกิดโรค disease incidence ในช่วงเวลา 7 วันจนถึง 49 วัน ข้อมูลมีอยู่ในบทที่ 4 (หน้า 93)  ของหนังสือชื่อ [The studies of plant disease epidemics](https://apsjournals.apsnet.org/doi/10.1094/9780890545058.004) ป้อนข้อมูลเองและสร้างเป็น dataframe คอลัมน์แรกเป็นเวลาประเมิน และคอลัมน์อื่นๆ การจัดการโรคด้วยวิธีต่าง ๆ
+
+```{r}
+pepper <-
+  tibble::tribble(
+    ~time, ~trt1, ~trt2, ~trt3,
+    0, 0.08, 0.001, 0.001,
+    7, 0.13, 0.01, 0.001,
+    14, 0.78, 0.09, 0.01,
+    21, 0.92, 0.25, 0.05,
+    28, 0.99, 0.8, 0.18,
+    35, 0.995, 0.98, 0.34,
+    42, 0.999, 0.99, 0.48,
+    49, 0.999, 0.999, 0.74
+  )
+paged_table(pepper)
+```
+## กราฟ
+
+เพราะว่าข้อมูลยังต้องมีการจัดโครงส้รางใหม่ ก่อน สร้างกราฟ ggplot
+
+```{r}
+pepper %>%
+  pivot_longer(2:4, names_to = "treat", values_to = "inc") %>%
+  ggplot(aes(time, inc,
+              linetype = treat,
+              shape = treat,
+              group = treat))+
+  geom_point(size =2)+
+  geom_line()+
+  annotate(geom = "text", x = 15, y = 0.84, label = "1")+
+  annotate(geom = "text", x = 23, y = 0.6, label = "2")+
+  annotate(geom = "text", x = 32, y = 0.33, label = "3")+
+  labs(y = "Disease incidence (y)",
+       x = "Time (days)")+
+  theme(legend.position = "none")
+```
+
+ส่วนใหญ่แล้ว กราฟ ออกเป็นเส้นโค้ง logistic (sigmoid curve) ยกเว้น 3 ที่ ดูคล้าย exponential ซึ่งยังไม่ถึงจุดสูงสุด อาจจะประมาณว่าการระบาดยังไม่สมบูรณ์ ตรงนี้ิ สามารถดัด logistic and Gompertz Model ไปได้ เพื่อที่จะสามารถดักสินใจว่า แบบจำลองแบบไหนเหมาะกับชุดข้อมูลนนี้ เราจึงต้องทำ model fitting และประเมินทางสถิติต่อไป
+
+## Model fitting
+
+ในบรรดาfunction ต่าง ๆ ที่มีให้เลือกใน  epifitter จะเริ่มต้นด้วย ตัวเลือกที่ง่ายที่สุด ซึ่งพอดีกับแบบจำลองของโรคระบาด หนึ่ง ๆ โดยใช้วิธีการถดถอยเชิงเส้น สำหรับสิ่งนี้ fit_lin() ซึ่ง ต้องการ: เวลา (t) และความรุนแรงของโรคหรือการเกิดโรค (y)
+
+เนื่องจากเรามีข้อมูลการโรคระบาดของ 3 การจัดการ จึงต้อง run fit_lin() สามครั้ง ผลจากการประเมินแบบจำลอง มาดูที่ Stats  ของแต่ละ epi1 ถึง epi3
+
+### trt1 model fitting
+```{r}
+library(epifitter)
+
+epi1 <- fit_lin(time = pepper$time,  
+  y = pepper$trt1 )
+epi1$Stats
+```
+
+### trt2 model fitting
+```{r}
+epi2 <- fit_lin(time = pepper$time,  
+  y = pepper$trt2 )
+epi2$Stats
+```
+
+### trt3 model fitting
+```{r}
+epi3 <- fit_lin(time = pepper$time,  
+  y = pepper$trt3 )
+epi3$Stats
+```
+จากตรงนี้ จะพบว่าที่เราเดาไว้แรก ๆ นั้น ใกล้เคียง ว่า น่าจะเป็น logistic หรือ Gompertz ซึ่ง ก็ไม่ค่อยแตกต่างกันเ้ท่าไหร่นัก แต่กการที่จะตัดสินใจว่าแบบจำลองไหนดี ควรดูกราฟกับค่าที่สังเกตได้ กับ ค่าที่พยากรณ์ได้
+
+### Multiple model fitting
+
+จะใช้ fit_multi() ซึ่ง จะต้องทำเป็น long format dataframe ก่อน ดังนั้น จะต้องเรียงข้อมูลใหม่จากเดิม
+
+```{r}
+pepper2 <- pepper %>%
+  pivot_longer(2:4, names_to ="treat", values_to = "inc")
+pepper2
+```
+fit_multi() ระบะ time_col คอลัมน์ไหนคือเวลา intensity_colคอลัมน์ไหนคือค่าประเมินโรค และ strata_cols คือ คอลัมน์ไหนเป็น treatment
+
+```{r}
+epi_all <- fit_multi(
+  data = pepper2,
+  time_col = "time",
+  intensity_col = "inc",
+  strata_cols = "treat",
+  nlin = FALSE
+)
+```
+ epifitter  จะจัดอันดับแบบจำลองตาม CCC (ยิ่งสูงยิ่งดี) แต่สิ่งสำคัญคือต้องตรวจสอบ RSE ด้วย ยิ่งต่ำยิ่งดี ในความเป็นจริง RSE มีความสำคัญมากกว่าเมื่อจุดประสงค์ของเราคือการทำนาย
+
+#### statistical check
+```{r}
+epi_all$Parameters %>%
+  select(treat, model, best_model, RSE, CCC)
+```
+เราจะเลือก แบบจำลอง logistic และ Gompertz มาเปรียบเทียบกันดู
+
+```{r}
+epi_all$Data %>% head() %>% paged_table()
+```
+จาก Data ของทำ model fitting นั้น จะมีค่าต่าง ๆ เพื่อให้มันใจต่อไปว่า ระหว่าง logistic หรือ Gompertz จะต้อง มาพล้อตกราฟว่า กราฟที่พยากรณ์ได้จากmodel กับค่าจริง มีความใกล้เคียงกันแค่ไหน
+
+#### graph check
+
+```{r}
+epi_all$Data %>%
+ filter(model %in% c("Gompertz", "Logistic")) %>%
+  ggplot(aes(time, predicted, shape = treat)) +
+  geom_point(aes(time, y)) +
+  geom_line() +
+  facet_wrap(~ model) +
+ coord_cartesian(ylim = c(0, 1)) + # set the max to 0.6
+  labs(
+    y = "Disease incidence",
+    x = "Time (days after emergence)"
+  )
+```
+
+
+#### error check
+
+ต่อมาดูความคลาดเคลื่อนกันบ้างว่า model ที่เกิดควาดเคลื่อน ตลอดช่ในช่วงเวลา
+
+```{r}
+epi_all$Data %>%
+ filter(model %in% c("Gompertz", "Logistic")) %>%
+  ggplot(aes(time, predicted -y, shape = treat)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype =2)+
+  facet_wrap(~ model) +
+ coord_cartesian(ylim = c(-0.4, 0.4)) + # set the max to 0.6
+  labs(
+    y = "Prediction error",
+    x = "Time (days after emergence)"
+  )
+```
+
+จะเห็นว่า logistic มีความคลาดเคลื่อนน้อยกว่า Gompertz
+
+เจาะลึกลงดูว่า treatment ไหนกันที่มีประสิทธิช่วยลดการระบาดของโรคได้ดี ซึ่งโดยทั่วไป เราจะวัดกันที่ค่า *r* (dy/dt) ถ้าค่า r น้อยกว่านั้นแสดงให้เห็นว่าโรคมีการพัฒนาช้ากว่า
+
+
+```{r}
+epi_all$Parameters %>%
+  filter(model == "Logistic") %>%
+  select(treat, y0, y0_ci_lwr, y0_ci_upr, r, r_ci_lwr, r_ci_upr
+)
+```
+
+สามารถ พล้อต ค่าเฉลี่ยของอัตราการเกิดโรค และ ที่ระดับ 95% confidence interval
+
+```{r}
+p1 <- epi_all$Parameters %>%
+  filter(model == "Logistic") %>%
+  ggplot(aes(treat, r)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = r_ci_lwr, ymax = r_ci_upr),
+    width = 0,
+    size = 1
+  ) +
+  labs(
+    x = "Time",
+    y = "r"
+  )
+p2 <- epi_all$Parameters %>%
+  filter(model == "Logistic") %>%
+  ggplot(aes(treat, 1 - exp(-y0))) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = y0_ci_lwr, ymax = y0_ci_upr),
+    width = 0,
+    size = 1
+  ) +
+  labs(
+    x = "Time",
+    y = "y0"
+  )
+
+p1 | p2
+```
+จากตรงนี้ เราก็จะทราบว่าโมเดลอะไรที่เหมาะสมกับข้อมูลของเรา และ ค่า Parametersที่นำไปประกอบ model เช่น r และ y0
