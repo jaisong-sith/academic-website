@@ -1,0 +1,153 @@
+---
+title: "sunmoon data from The Thai Astonomical society"
+author: "Sith Jaisong"
+date: '2021-12-01'
+categories:
+- R
+- OpenDataTH
+tags:
+- R
+- OpenDataTH
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="เกรน" class="section level1">
+<h1>เกริ่น</h1>
+<p>Data มีอยู่ทุกที่ ยิ่งในยุคนี้แล้ว มีช่องทางโดยเฉพาะทางอินเตอร์มีช่องทางโดยเฉพาะทางอินเตอร์เนต ที่เปิดโอกาสให้เข้าถึงข้อมูลได้ง่าย โดยไม่ต้องขออนุญาตให้ยุ่งยากอีกต่โดยไม่ต้องขออนุญาตให้ยุ่งยากอีกต่อไป</p>
+<p>เลยอยากจะบันทึกเอาไว้มามีที่ไหนบ้าง รวมถึงวิธีเข้าด้วยว่า สามารถเอามาได้อย่างไร แบบดิบ ๆ</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.1     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(knitr)
+library(patchwork)
+library(ggthemes)
+library(rmarkdown)
+library(cowplot)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggthemes&#39;:
+## 
+##     theme_map</code></pre>
+<pre><code>## The following object is masked from &#39;package:patchwork&#39;:
+## 
+##     align_plots</code></pre>
+<pre class="r"><code>theme_set(theme_few())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(digits = 3)</code></pre>
+<p>library ที่ใช้สำหรับดึงข้อมูลมีดังนี้</p>
+<pre class="r"><code>library(htmltab)
+library(lubridate)
+library(scales)
+library(chron)</code></pre>
+<ol style="list-style-type: decimal">
+<li>สมาคมดาราศาสตร์ไทย
+ดึงข้อมูล เวลาดวงอาทิตย์และดวงจันทร์ขึ้น-ตก จาก <a href="http://thaiastro.nectec.or.th/skyevnt/sunmoon/riseset.html">http://thaiastro.nectec.or.th/skyevnt/sunmoon/riseset.html</a></li>
+</ol>
+<p>เนื่องจากโครงสร้าง</p>
+<pre class="r"><code># create the vector of province names you need to see
+
+province.list &lt;-
+  c(&quot;chiangmai&quot;)
+
+# now there are only data from 2011 to 2019 to create the year list
+year.list &lt;- as.character(2018:2019)
+
+# there are 12 months to create the month list
+month.no &lt;- as.character(1:12)
+
+# set the datalist to keep the data in list type
+
+datalist &lt;- list()
+
+#### looping it ####
+
+for (i in 1:length(province.list)) {
+  for (j in 1:length(year.list)) {
+    for (k in 1:12) {
+      # call the web site
+      web &lt;-
+        paste0(
+          &quot;http://thaiastro.nectec.or.th/skyevnt/sunmoon/&quot;,
+          year.list[i],
+          &quot;/&quot;,
+          province.list[i],
+          &quot;.html&quot;
+        )
+
+      # extract table from website and select thr column related
+      data &lt;- htmltab(web, which = k)[c(-1, -2), c(1, 3, 5)]
+
+      # rename the column names from thai to eng
+      names(data) &lt;- c(&quot;date&quot;, &quot;sunrise&quot;, &quot;sunset&quot;)
+
+      # restructure the datatable in the right type
+
+      data &lt;- data %&gt;% mutate(
+        location = province.list[i],
+        year = year.list[j],
+        month = month.no[k],
+        date = c(1:length(data$date)),
+        sunrise = times(paste0(data$sunrise, &quot;:00&quot;)),
+        sunset = times(paste0(data$sunset, &quot;:00&quot;)),
+        date = as.character(date)
+      )
+
+      # create new photoperiod variable
+      data$photoperiod &lt;-
+        difftime(
+          strptime(data$sunset, &quot;%H:%M:%S&quot;),
+          strptime(data$sunrise, &quot;%H:%M:%S&quot;),
+          units = &quot;hours&quot;
+        ) %&gt;% as.numeric()
+
+      #
+      data$day_month_year &lt;-
+        as.Date(paste0(data$date, &quot;/&quot; , data$month, &quot;/&quot;,
+                       data$year),
+                format = &quot;%d/%m/%y&quot;)
+      
+      data$dayofyear &lt;-
+        as.numeric(format(data$day_month_year, &quot;%j&quot;))
+
+      datalist[[((i - 1) * (12 * length(year.list))) + (12 * (j - 1)) +
+                  k]] &lt;- data
+    }
+  }
+}
+
+# combind list data
+big_data &lt;- do.call(rbind, datalist)
+
+big_data$CommonDate &lt;-
+  as.Date(paste0(&quot;2000-&quot;, format(big_data$day_month_year,
+                                 &quot;%j&quot;)), &quot;%Y-%j&quot;)
+
+big_data %&gt;% ggplot(aes(x = CommonDate, y = photoperiod, color = location)) +
+  #  geom_point() +
+  #  geom_line() +
+  geom_smooth() +
+  #  facet_grid(location~.) +
+  scale_x_date(
+    labels = function(x)
+      format(x, &quot;%d-%b&quot;),
+    date_breaks = &quot;1 month&quot;
+  ) +
+  theme_bw() + theme(axis.text = element_text(size = 12),
+                     axis.title = element_text(size = 12)) +
+  xlab(&quot;Date&quot;) + ylab(&quot;Photoperiod (hrs)&quot;) +
+  geom_hline(
+    yintercept = 12.29,
+    linetype = &quot;dashed&quot;,
+    color = &quot;red&quot;,
+    size = 1
+  )</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
