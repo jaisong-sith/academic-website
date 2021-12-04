@@ -1,13 +1,13 @@
 ---
-title: "sunmoon data from The Thai Astonomical society"
+title: "ดึงข้อมูล xml จาก The Thai Astonomical society"
 author: "Sith Jaisong"
-date: '2021-12-01'
+date: "2021-12-03"
 categories:
 - R
-- OpenDataTH
+- Web scraping
 tags:
 - R
-- OpenDataTH
+- Web scraping
 ---
 
 # เกริ่น
@@ -28,33 +28,32 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(digits = 3)
 ```
 
-
-library ที่ใช้สำหรับดึงข้อมูลมีดังนี้
+library ที่ใช้สำหรับดึงข้อมูลมีดังนี้และจ
 ```{r}
 library(htmltab)
 library(lubridate)
 library(scales)
 library(chron)
 ```
+# ดึงข้อมูล
+ดึงข้อมูล เวลาดวงอาทิตย์และดวงจันทร์ขึ้น-ตก จาก สมาคมดาราศาสตร์ไทย <http://thaiastro.nectec.or.th/skyevnt/sunmoon/riseset.html>
 
-1. สมาคมดาราศาสตร์ไทย
-ดึงข้อมูล เวลาดวงอาทิตย์และดวงจันทร์ขึ้น-ตก จาก [http://thaiastro.nectec.or.th/skyevnt/sunmoon/riseset.html](http://thaiastro.nectec.or.th/skyevnt/sunmoon/riseset.html)
-
-เรามาลองเริ่มเอาข้อมูลจากแต่ละหน้า ยกตัวอย่าง `http://thaiastro.nectec.or.th/skyevnt/sunmoon/2021/krabi.html` จะพบว่า 1 หน้า แสดงตารางเวลาดวงอาทิตย์ขึ้นและตกและพระจันทร์ขึ้นและตก ในแต่ละเดือน ทั้งหมด 12 ตาราง เริ่มตั้งแต่ เดือน มกราคม - ธันวาคม ดังนั้น เราจึงต้องดึงข้อมูลมาเป็นหน้า ๆ เพื่อเก็บ ในแต่ละปี และแต่ละจังหวัด
+เรามาลองเริ่มเอาข้อมูลจากแต่ละหน้า ยกตัวอย่าง <http://thaiastro.nectec.or.th/skyevnt/sunmoon/2021/krabi.html> จะพบว่า 1 หน้า แสดงตารางเวลาดวงอาทิตย์ขึ้นและตกและพระจันทร์ขึ้นและตก ในแต่ละเดือน ทั้งหมด 12 ตาราง เริ่มตั้งแต่ เดือน มกราคม - ธันวาคม ดังนั้น เราจึงต้องดึงข้อมูลมาเป็นหน้า ๆ เพื่อเก็บ ในแต่ละปี และแต่ละจังหวัด
 
 เรามาลองแกะแต่ละหน้ากัน
+
 ```{r}
 web <- 'http://thaiastro.nectec.or.th/skyevnt/sunmoon/2021/krabi.html'
 ```
 ดึงตาราง ที่ 1
 ```{r}
-htmltab::htmltab(web, which = 1)
+htmltab::htmltab(web, which = 1) %>% head()
 ```
 ดึงตารางที่ 2
 ```{r}
-htmltab::htmltab(web, which = 2)
+htmltab::htmltab(web, which = 2) %>% head()
 ```
-จะเห็นว่าเราต้องกำหนดว่าจะเอาเดือนไหน เดือน `which = 1` คือ เดือนที่1 หรือ เดือน มกราคม
+จะเห็นว่าเราต้องกำหนดว่าจะเอาเดือนไหน เดือน `which = 1` คือ เดือนที่ 1 หรือ เดือน มกราคม
 
 เรามาลองใช้ข้อมูลจากตารางที่ 1 กัน
 
@@ -65,23 +64,39 @@ table1 <- htmltab::htmltab(web, which = 1)
 
 ```{r}
 table1 <- htmltab::htmltab(web, which = 1)
+table1
 ```
 
+เราจะเห็นว่าตารางที่เราได้มาจากเวป มันยังไม่พร้อมที่จะเอาไปใช้ได้เลย เพราะว่า ยังมีคอลัมน์ที่เราไม่ใช้ หรือ แถวบางแถวที่เราไม่ใช้ ดังนั้นเราจะต้องเอาออก
+นั้นคือ แถวที่  1 และ 3 และ คอลัมน์ที่ 1 3 และ 5 จึงได้
 
-```{r eval=FALSE, include=FALSE}
+```{r}
+table1_ed <- table1[c(-1, -2), c(1, 3, 5)]
+table1_ed
+```
+นี่ก็คือ ตัวอย่างที่ใช้ในการดึงข้อมูลตารางจากเวปมา แต่เมื่อเราทำงานจริง ๆ เราไมได้ เราอาจจะต้องการ รวมทุกเดือนในแต่ละปี หรือ ทุกจังหวัด ก็เป็นได้
+
+# การดึงข้อมูลทั้งหน้าเวป
+จากที่เราเห็นโครงสร้าง url ของเวปแล้ว `http://thaiastro.nectec.or.th/skyevnt/sunmoon/2021/krabi.html` จะเห็นว่า `/2021/krabi.html` ขึ้นด้วยปี และ ต่อด้วยจังหวัด
+ดังนั้น เราจะต้องเปิด ปี และ จังหวัด ไปทีละ หน้า แล้ว ดึงข้อมูล ทั้ง 12 เดือน เราจึงต้องใช้ loop ช่วย และ นี่ คือ ขั้นตอนการดึงข้อมูล
+
+1. สร้าง vector ที่เราต้องการก่อน นั้นก็คือ ปี จังหวัด และ เดือน
+
+```{r}
 # create the vector of province names you need to see
-
-province.list <-
-  c("chiangmai")
+province.list <- c("chiangmai", "krabi" )
 
 # now there are only data from 2011 to 2019 to create the year list
-year.list <- as.character(2018:2019)
+year.list <- as.character(2019:2020)
 
 # there are 12 months to create the month list
 month.no <- as.character(1:12)
+```
+2. ต่อมา ผมจะมา loop โดยเริ่มจากดึงข้อมูล ตารางแต่ละตาราง ในแต่ละปี และ จังหวัด ซึ่ง จะเป็น loop 3 ชั้น คือ loop แรก คือ แต่ละเดือน ต่อมา จะเป็น ปี และ จังหวัด ซึ่ง โจทย์ของผม คือ ผมอยากจะรู้ว่า ช่วงเวลาที่พระอาทิตย์ขึ้นและตกในแต่ละวัน เป็นระยะเวลาเท่าเรา และ ใน 1 ปี จะเป็นอย่างไร ในแต่ละ จังหวัดนั้น อย่างไร
 
-# set the datalist to keep the data in list type
 
+```{r echo=TRUE}
+# set the data list to keep the data in list type
 datalist <- list()
 
 #### looping it ####
@@ -105,15 +120,14 @@ for (i in 1:length(province.list)) {
       # rename the column names from thai to eng
       names(data) <- c("date", "sunrise", "sunset")
 
-      # restructure the datatable in the right type
-
+      # restructure the data table in the right type
       data <- data %>% mutate(
         location = province.list[i],
         year = year.list[j],
         month = month.no[k],
         date = c(1:length(data$date)),
-        sunrise = times(paste0(data$sunrise, ":00")),
-        sunset = times(paste0(data$sunset, ":00")),
+        sunrise = chron::times(paste0(data$sunrise, ":00")),
+        sunset = chron::times(paste0(data$sunset, ":00")),
         date = as.character(date)
       )
 
@@ -134,23 +148,31 @@ for (i in 1:length(province.list)) {
       data$dayofyear <-
         as.numeric(format(data$day_month_year, "%j"))
 
+
+      data$CommonDate <-
+          as.Date(paste0("2000-", format(data$day_month_year,
+                                         "%j")), "%Y-%j")
+
+#define list no to collect data table
       datalist[[((i - 1) * (12 * length(year.list))) + (12 * (j - 1)) +
                   k]] <- data
     }
   }
 }
 
-# combind list data
-big_data <- do.call(rbind, datalist)
+# combind list data in to one data frame
+comb_data <- do.call(rbind, datalist)
+```
 
-big_data$CommonDate <-
-  as.Date(paste0("2000-", format(big_data$day_month_year,
-                                 "%j")), "%Y-%j")
+เราก็จะได้ ข้อมูลของ จังหวัดเชียงใหม่ กับจังหวัดกระบี่ ตั้งแต่ปี 2019 และ 2020
 
-big_data %>% ggplot(aes(x = CommonDate, y = photoperiod, color = location)) +
-    geom_point() +
-  #  geom_line() +
-  geom_smooth() +
+```{r}
+paged_table(comb_data)
+```
+
+```{r fig.width=10}
+comb_data %>% ggplot(aes(x = CommonDate, y = photoperiod, color = location)) +
+    geom_point(alpha = 0.6) +
   scale_x_date(
     labels = function(x)
       format(x, "%d-%b"),
@@ -158,24 +180,5 @@ big_data %>% ggplot(aes(x = CommonDate, y = photoperiod, color = location)) +
   ) +
   theme_bw() + theme(axis.text = element_text(size = 12),
                      axis.title = element_text(size = 12)) +
-  xlab("Date") + ylab("Photoperiod (hrs)") +
-  geom_hline(
-    yintercept = 12.29,
-    linetype = "dashed",
-    color = "red",
-    size = 1
-  )
-```
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
+  xlab("Date") + ylab("Sunlight duration (hrs)") 
 ```
