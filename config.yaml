@@ -10,7 +10,7 @@ buildDrafts: false
 buildFuture: false
 buildExpired: false
 enableEmoji: true
-googleAnalytics: UA-134994886-1
+googleAnalytics: UA-62757043-1
 
 minify:
     disableXML: true
